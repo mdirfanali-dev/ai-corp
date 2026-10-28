@@ -1,0 +1,65 @@
+name: Release (Windows)
+
+# Builds AICorp.exe on a Windows runner from the tagged commit and publishes it as a GitHub release.
+# Runs only when a repository writer pushes a tag that starts with "v". Tags with -beta, -alpha or -rc become pre-releases.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build AICorp.exe
+        shell: pwsh
+        run: ./desktop/build.ps1 -Out "$PWD/dist"
+      - name: Smoke check (the checker must start and report on WSL)
+        shell: pwsh
+        run: |
+          $out = python desktop/shell.py --check 2>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch "WSL") { throw "the checker did not report on WSL" }
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash -Algorithm SHA256 dist/AICorp.exe).Hash.ToLower()
+          "$h  AICorp.exe" | Out-File -Encoding ascii dist/SHA256SUMS
+          Get-Content dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/AICorp.exe
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          case "$TAG" in
+            *-beta*|*-alpha*|*-rc*) FLAGS="--prerelease"; NOTES=.github/release-notes-beta.md ;;
+            *) FLAGS=""; NOTES=.github/release-notes.md ;;
+          esac
+          gh release create "$TAG" dist/AICorp.exe dist/SHA256SUMS --title "AICorp $TAG" --notes-file "$NOTES" $FLAGS --verify-tag

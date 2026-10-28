@@ -73,6 +73,12 @@ python -m aicorp.engine --runner fake
 Create two employees, give one a task, and watch the Command Center. For real work, alerts and the browser worker follow the
 [setup guide](docs/SETUP-LINUX.md) and the [user guide](docs/USER-GUIDE.md).
 
+## Download (Windows, testing version)
+
+A **beta** of the Windows app is published on the [Releases page](https://github.com/mdirfanali-dev/ai-corp/releases): `AICorp.exe` plus a checksum.
+It is not code-signed yet (Windows will warn once), it is tested on a single computer, and it needs WSL2 with Ubuntu. Read the release notes and the
+[Windows setup guide](docs/SETUP-WINDOWS.md) first. [Signing plan](docs/CODE-SIGNING-POLICY.md).
+
 ## Platform status
 
 | Platform | Status | Notes |
