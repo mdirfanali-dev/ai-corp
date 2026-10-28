@@ -106,6 +106,7 @@ def visible_panes(page):
 
 def test_panel_in_a_real_browser(live, page):
     url, sup, exited = live
+    page.add_init_script("window.__done = []; window.pywebview = {api: {exit_done: () => window.__done.push(1)}};")   # as inside the desktop app
     page.goto(url)
     page.wait_for_selector("#doctorsum")
     assert "System check" in page.inner_text("#doctorsum")
@@ -162,6 +163,7 @@ def test_panel_in_a_real_browser(live, page):
         assert "off" in page.get_attribute(f"#step-{step}", "class"), step
     assert page.inner_text("#sdtitle") == "All off"
     assert exited.wait(8)
+    page.wait_for_function("window.__done.length === 1", timeout=5000)           # the desktop app is told, it does not rely on window.close()
     assert not sup.state()["running"]
 
 

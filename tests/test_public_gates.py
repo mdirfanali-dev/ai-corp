@@ -22,6 +22,8 @@ def tree(tmp_path):
     for name in ("LICENSE", "NOTICE", "README.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"):
         shutil.copy(ROOT / name, tmp_path / name)
     shutil.copytree(ROOT / "docs", tmp_path / "docs")
+    (tmp_path / "desktop").mkdir()
+    shutil.copy(ROOT / "desktop" / "README.md", tmp_path / "desktop" / "README.md")      # docs link to it
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "app.py").write_text("print('hello')\n")
     return tmp_path

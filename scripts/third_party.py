@@ -30,6 +30,16 @@ def license_of(dist: metadata.Distribution) -> str:
     return text[0][:80] if text and len(text[0]) < 80 else "unknown"
 
 
+# The Windows desktop app is built on Windows (desktop/build.ps1), so its tools are not installed here; read from the metadata of the
+# pinned versions in desktop/requirements.txt (checked when the app was built).
+DESKTOP_BUNDLED = [("pywebview", "6.2.1", "BSD-3-Clause"), ("pythonnet", "3.2.1", "MIT"), ("clr_loader", "0.3.1", "not stated in the package metadata, check upstream"),
+                   ("bottle", "0.13.4", "MIT"), ("proxy_tools", "0.1.0", "MIT"), ("cffi", "2.1.1", "MIT-0"), ("pycparser", "3.12", "BSD-3-Clause"),
+                   ("typing_extensions", "4.16.0", "PSF-2.0")]
+DESKTOP_BUILD_ONLY = [("pyinstaller", "6.22.3", "GPL-2.0-or-later with a special exception that allows the built program to use any license"),
+                      ("pyinstaller-hooks-contrib", "2026.9", "Apache-2.0; GPL-2.0"), ("altgraph", "0.17.5", "MIT"), ("pefile", "2024.8.26", "MIT"),
+                      ("packaging", "26.3", "Apache-2.0 OR BSD-2-Clause"), ("pywin32-ctypes", "0.2.3", "BSD-3-Clause"), ("setuptools", "84.2.1", "MIT")]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
@@ -60,7 +70,14 @@ def main() -> int:
         lines += ["", f"Note: {', '.join(mpl)} is licensed under the Mozilla Public License 2.0 (file-level copyleft). AICorp uses it unmodified as a dependency."]
     if problems:
         lines += ["", "## Needs review", ""] + [f"- {p}" for p in problems]
-    lines += ["", "Playwright downloads a Chromium build on `playwright install`; that browser is a separate download under its own licenses and is not part of this repository."]
+    lines += ["", "## Windows desktop app (`desktop/`)", "",
+              "Only the optional Windows app uses these; nothing here is needed to run AICorp. Versions are the pinned ones in `desktop/requirements.txt`.",
+              "", "Bundled into `AICorp.exe`:", "", "| Package | Version | License |", "|---|---|---|"]
+    lines += [f"| {n} | {v} | {l} |" for n, v, l in DESKTOP_BUNDLED]
+    lines += ["", "Build tools only (not shipped in the `.exe`):", "", "| Package | Version | License |", "|---|---|---|"]
+    lines += [f"| {n} | {v} | {l} |" for n, v, l in DESKTOP_BUILD_ONLY]
+    lines += ["", "The `.exe` shows the page through the Microsoft Edge WebView2 runtime that ships with Windows 11 (Microsoft's own license; not redistributed here).",
+              "", "Playwright downloads a Chromium build on `playwright install`; that browser is a separate download under its own licenses and is not part of this repository."]
     (ROOT / "docs" / "THIRD_PARTY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote docs/THIRD_PARTY.md ({len(rows)} packages, {len(problems)} to review)")
     return 0

@@ -11,6 +11,7 @@ import json
 import queue
 import secrets
 import signal
+import sys
 import threading
 import time
 from dataclasses import asdict
@@ -131,6 +132,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mode", choices=["fake", "claude"], default="fake", help="fake = simulated work, claude = real Claude Code")
     parser.add_argument("--control-port", type=int, default=8760)
     parser.add_argument("--no-autostart", action="store_true", help="open the panel but do not start the programs")
+    parser.add_argument("--stdin-guard", action="store_true",
+                        help="shut everything down when standard input closes (the desktop app uses this so nothing is left running if it dies)")
     args = parser.parse_args(argv)
     home = config.ensure_layout()
     sup = Supervisor(home, mode=args.mode)
@@ -146,6 +149,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"AICorp control panel: http://127.0.0.1:{port}/   dashboard: {sup.dashboard_url()}  (Ctrl+C = shut everything down)")
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: done.set())
+    if args.stdin_guard:
+        def watch_parent() -> None:
+            try:
+                while sys.stdin.read(4096):
+                    pass
+            except (OSError, ValueError):
+                pass
+            done.set()
+        threading.Thread(target=watch_parent, daemon=True, name="stdin-guard").start()
     done.wait()
     if not sup.shutting_down:
         sup.stop()

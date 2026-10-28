@@ -152,7 +152,7 @@ function connect(){const es=new EventSource("/api/stream");
     else if(e.kind==="state"){if(state){const p=state.processes.find(x=>x.name===e.process);if(p){p.state=e.state;p.note=e.note||"";if(e.pid)p.pid=e.pid;state.running=state.processes.some(x=>["starting","running","stopping"].includes(x.state));render()}}}
     else if(e.kind==="shutdown"){const row=$("#step-"+e.step);if(!row)return;
       const st=e.state==="stopping"?"stopping":(e.state==="failed"?"failed":"off");row.className="step-row "+st;row.querySelector(".ic").textContent=st==="off"?"✓":(st==="failed"?"!":"");$("#sd-"+e.step).textContent=e.detail||"";
-      if(e.step==="done"){$("#sdtitle").textContent=e.detail?"Done, with problems":"All off";$("#sdnote").textContent=exiting?"Closing this window…":"";if(exiting)setTimeout(()=>{window.close();$("#sdnote").textContent="You can close this window now."},900);else setTimeout(()=>$("#shutdown").classList.remove("show"),1200);refresh()}}};
+      if(e.step==="done"){$("#sdtitle").textContent=e.detail?"Done, with problems":"All off";$("#sdnote").textContent=exiting?"Closing this window…":"";if(exiting)setTimeout(()=>{if(window.pywebview&&window.pywebview.api&&window.pywebview.api.exit_done){window.pywebview.api.exit_done();return}window.close();$("#sdnote").textContent="You can close this window now."},900);else setTimeout(()=>$("#shutdown").classList.remove("show"),1200);refresh()}}};
   es.onerror=()=>{if(exiting)$("#sdnote").textContent="The control panel has closed. You can close this window."};}
 let exiting=false;
 $("#exit").onclick=()=>$("#confirm").classList.add("show");

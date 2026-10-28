@@ -77,7 +77,7 @@ Create two employees, give one a task, and watch the Command Center. For real wo
 
 | Platform | Status | Notes |
 |---|---|---|
-| Windows + WSL2 | tested | Ubuntu under WSL2 is where AICorp is developed and tested |
+| Windows + WSL2 | tested | Ubuntu under WSL2 is where AICorp is developed and tested; a [desktop app](docs/SETUP-WINDOWS.md) is available |
 | Linux | untested | same userland as the WSL2 setup, so expected to work; a native install has not been tried |
 | macOS | untested | needs an equivalent low-privilege user set up by hand ([notes](docs/SETUP-MACOS.md)) |
 | Windows (native) | unsupported | the engine and tests rely on POSIX processes and signals |

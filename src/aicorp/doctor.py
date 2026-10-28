@@ -430,8 +430,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--prompt", action="store_true", help="print a help prompt to paste into ChatGPT/Claude")
     parser.add_argument("--only", help="limit --prompt to one check id")
+    parser.add_argument("--fix", choices=FIXES, help="run one safe fix (never sudo), then say what happened")
     args = parser.parse_args(argv)
     probe = Probe()
+    if args.fix:
+        ok, message = apply_fix(args.fix, probe)
+        print(json.dumps({"ok": ok, "message": message}) if args.json else message)
+        return 0 if ok else 1
     results = run_checks(probe)
     if args.json:
         print(json.dumps({"summary": summary(results), "port": find_free_port(probe, int(probe.env.get("AICORP_PORT", DEFAULT_PORT))),
