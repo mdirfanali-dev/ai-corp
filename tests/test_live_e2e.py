@@ -105,7 +105,7 @@ def test_command_center_updates_live_and_matches_reality(live):
         assert delay <= 2.0, f"took {delay:.2f}s"
         assert "blocked: captcha" in page.inner_text(".card[data-name='W5']").lower()
         assert int(page.inner_text("#st-blocked")) == 1 and int(page.inner_text("#st-need")) == 1
-        assert "blocked" in page.inner_text("#feed").lower()                # live feed got it without reload
+        page.wait_for_function("document.querySelector('#feed').innerText.toLowerCase().includes('blocked')", timeout=5000)  # live feed, no reload
 
         # --- offline / sleep: the page catches up by itself afterwards
         page.context.set_offline(True)

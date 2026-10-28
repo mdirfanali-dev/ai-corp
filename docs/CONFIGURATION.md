@@ -10,6 +10,7 @@
 | `AICORP_WORKER_USER` | none | low-privilege OS user that runs Claude Code |
 | `AICORP_CLAUDE_BIN` | `claude` | path to that user's Claude Code executable |
 | `AICORP_ALLOW_SAME_USER` | off | `1` = run agents as yourself (weaker isolation) |
+| `AICORP_BROWSER_NO_SANDBOX` | off | `1` = start the browser worker's Chromium with `--no-sandbox` (needed on CI images that forbid user namespaces; weaker isolation, leave off on your own computer) |
 | `AICORP_CAP` | `4` | engine: maximum parallel tasks |
 | `AICORP_MAX_TURNS` / `AICORP_RUN_TIMEOUT` | `12` / `600` | fall-back turn and time limits per run (see *Run limits* below) |
 | `AICORP_TRANSPORT_DIR` | none | testing: write alerts/chat to files instead of Telegram/e-mail |

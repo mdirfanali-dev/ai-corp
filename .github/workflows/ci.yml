@@ -35,4 +35,6 @@ jobs:
       - name: Tests
         env:
           CI: "true"
+          # Ubuntu runners forbid the user namespaces Chromium's sandbox needs; the throw-away runner is the sandbox
+          AICORP_BROWSER_NO_SANDBOX: "1"
         run: pytest -q

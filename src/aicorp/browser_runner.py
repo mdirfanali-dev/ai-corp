@@ -224,7 +224,8 @@ class BrowserRunner:
         args = [self._exe, "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1", f"--user-data-dir={profile}",
                 "--no-first-run", "--no-default-browser-check", "--disable-background-networking", "--password-store=basic",
                 "--disable-features=Translate,MediaRouter", *self.cfg.extra_args]
-        if hasattr(os, "geteuid") and os.geteuid() == 0:
+        if (hasattr(os, "geteuid") and os.geteuid() == 0) or os.environ.get("AICORP_BROWSER_NO_SANDBOX") == "1":
+            # root cannot use Chromium's sandbox; some CI images forbid the user namespaces it needs (opt-in only)
             args.append("--no-sandbox")
         if not headed:
             args.append("--headless=new")
