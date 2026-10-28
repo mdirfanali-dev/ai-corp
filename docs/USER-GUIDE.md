@@ -16,7 +16,25 @@ flowchart LR
   W --> A[Advisor jobs · alerts · chat]
 ```
 
-## Start it (three terminals)
+## Start it with the control panel (one command)
+
+```bash
+python -m aicorp.app                 # simulated work; add --mode claude for real Claude Code
+```
+
+It starts the dashboard, the watchdog and the engine for you, picks a free port if 8765 is busy, and opens a control page
+(default `http://127.0.0.1:8760/`) with:
+
+* **System check**: the [doctor](DOCTOR.md) results, a *Recheck* button, one-click fixes where safe, and a help prompt you can paste into ChatGPT or Claude.
+* **Live log panes** for the three programs. Choose one pane, side by side, stacked or a grid, and which programs to show; this only changes what you see, never what runs.
+* **Control / Dashboard / Split**: the dashboard can be shown inside the same page, next to the logs.
+* **Start / Stop**, **Restart** per program, and **Exit**, which stops the engine, the watchdog and the dashboard in order, closes browser windows AICorp opened, shows each step going off, and then ends the program. Ctrl+C in the terminal does the same.
+
+If you already started the programs by hand on the same data folder, the control panel refuses to start a second copy and says so.
+Alert links use the "dashboard address" from Settings; if the control panel had to choose another port, update it there.
+
+## Start it by hand (three terminals)
+
 
 | Program | Command | What it does |
 |---|---|---|
