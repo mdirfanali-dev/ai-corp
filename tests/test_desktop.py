@@ -215,10 +215,14 @@ def test_closing_during_setup_just_closes(fake, tmp_path):
 
 
 def test_a_failed_start_returns_to_setup_with_a_scrubbed_log(fake, tmp_path, monkeypatch):
-    sh = make_shell(fake, tmp_path, distro="Ubuntu-24.04", project=str(tmp_path / "home"))       # no AICorp there: the app cannot run
+    bad = tmp_path / "bad-python"                                           # a Python that cannot run AICorp, whatever is installed here
+    bad.write_text(f"#!/bin/sh\necho 'cannot start in {tmp_path}/somewhere'\nexit 1\n")
+    bad.chmod(0o755)
+    monkeypatch.setenv("FAKE_WSL_PYTHON", str(bad))
+    sh = make_shell(fake, tmp_path, distro="Ubuntu-24.04")
     result = sh.start()
     assert not result["ok"] and sh.state == "setup" and "address" in result["error"]
-    assert str(tmp_path) not in result["log"]
+    assert "cannot start" in result["log"] and str(tmp_path) not in result["log"]
 
 
 def test_unreachable_localhost_gives_the_wsl_hint(fake, tmp_path, monkeypatch):
