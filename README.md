@@ -61,6 +61,8 @@ export AICORP_HOME="$HOME/aicorp-data"        # any empty folder: your company's
 python -m aicorp.web                           # open http://127.0.0.1:8765
 ```
 
+Not sure your computer is ready? Run `python -m aicorp.doctor` ([what it checks](docs/DOCTOR.md)).
+
 Try it without using any AI (simulated work), in a second terminal:
 
 ```bash

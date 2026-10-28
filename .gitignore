@@ -20,3 +20,5 @@ config/gate-denylist.txt
 *.egg-info/
 build/
 dist/
+.engine.lock
+company/employees/
