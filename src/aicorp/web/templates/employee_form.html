@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, errors_box, who %}
+{% block title %}{{ emp.name if emp else 'New employee' }}{% endblock %}
+{% block content %}
+<div class="bar">
+  <h1>{{ emp.name if emp else 'New employee' }}
+    {% if emp %}<span class="badge {{ emp.kind }}">{{ emp.kind }}</span> <span class="badge {{ 'archived' if emp.status == 'archived' }}">{{ emp.status }}</span>{% endif %}</h1>
+  <a href="/employees">← All employees</a>
+</div>
+{{ errors_box(errors) }}
+<form method="post" action="{{ '/employees/' ~ emp.emp_id if emp else '/employees' }}">
+  {{ csrf_field(csrf) }}
+  <div class="two">
+    <div class="panel">
+      <label for="name">Name <span class="muted">(unique)</span></label>
+      <input id="name" type="text" name="name" value="{{ f.name }}" maxlength="60" required>
+      {% if emp %}
+        <input type="hidden" name="kind" value="{{ emp.kind }}">
+        <div class="hint">Kind: {{ emp.kind }} (cannot be changed).</div>
+      {% else %}
+        <label for="kind">Kind</label>
+        <select id="kind" name="kind">
+          <option value="permanent" {{ 'selected' if f.kind == 'permanent' }}>permanent</option>
+          <option value="temporary" {{ 'selected' if f.kind == 'temporary' }}>temporary (can be deleted later)</option>
+        </select>
+      {% endif %}
+      {% if not emp or emp.kind == 'temporary' %}
+        <label for="expires_at">Ends at <span class="muted">(temporary only, optional, your local time)</span></label>
+        <input id="expires_at" type="datetime-local" name="expires_at" value="{{ f.expires_at }}">
+      {% endif %}
+      <label for="reports_to">Reports to</label>
+      <select id="reports_to" name="reports_to"><option value="">— nobody (reports to the Founder) —</option>
+        {% for m in managers %}<option value="{{ m.emp_id }}" {{ 'selected' if f.reports_to == m.emp_id }}>{{ m.name }}</option>{% endfor %}
+      </select>
+      <label>Roles <span class="muted">(none is fine: a bench employee has read-only defaults)</span></label>
+      <div class="chips">{% for r in roles %}
+        <label class="inline"><input type="checkbox" name="role_ids" value="{{ r.role_id }}" {{ 'checked' if r.role_id in f.role_ids }}> {{ r.name }}</label>
+      {% endfor %}</div>
+      <label>Teams</label>
+      <div class="chips">{% for t in teams %}
+        <label class="inline"><input type="checkbox" name="team_ids" value="{{ t.team_id }}" {{ 'checked' if t.team_id in f.team_ids }}> {{ t.name }}</label>
+      {% else %}<span class="muted">No teams yet.</span>{% endfor %}</div>
+    </div>
+    <div class="panel">
+      <label for="skills">Skills <span class="muted">(comma separated)</span></label>
+      <input id="skills" type="text" name="skills" value="{{ f.skills }}">
+      <label for="tools">Allowed tools <span class="muted">(comma separated)</span></label>
+      <input id="tools" type="text" name="tools" value="{{ f.tools }}" placeholder="e.g. browser, files">
+      <label for="model">Model <span class="muted">(optional; empty = lightest that fits, see Usage &gt; Run limits)</span></label>
+      <select id="model" name="model"><option value="">automatic</option>{% for m in ('claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5') %}<option value="{{ m }}" {{ 'selected' if f.model == m }}>{{ m }}</option>{% endfor %}</select>
+      <label for="max_turns">Max turns per run <span class="muted">(1-40, optional)</span></label><input id="max_turns" type="text" name="max_turns" value="{{ f.max_turns }}" inputmode="numeric">
+      <label for="timeout">Time limit per run in seconds <span class="muted">(30-1800, optional)</span></label><input id="timeout" type="text" name="timeout" value="{{ f.timeout }}" inputmode="numeric">
+      <label>Extra permissions <span class="muted">(on top of roles)</span></label>
+      <label class="inline"><input type="checkbox" name="execute" {{ 'checked' if f.execute }}> execute work</label>
+      <label class="inline"><input type="checkbox" name="assign" {{ 'checked' if f.assign }}> assign tasks</label>
+      {% if emp %}<div class="hint">Effective now:
+        execute {{ 'yes' if emp.capabilities.execute else 'no' }}, assign {{ 'yes' if emp.capabilities.assign else 'no' }}, approve no (approvals are the Founder's).</div>{% endif %}
+      <label for="notes">Notes</label>
+      <input id="notes" type="text" name="notes" value="{{ f.notes }}">
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <label for="instructions" style="margin-top:0">Instructions <span class="muted">(Markdown, saved to this employee's instructions.md)</span></label>
+    <textarea id="instructions" name="instructions" style="min-height:180px">{{ f.instructions }}</textarea>
+  </div>
+  <div class="actions"><button type="submit">{{ 'Save changes' if emp else 'Create employee' }}</button></div>
+</form>
+
+{% if emp and emp.kind != 'system' %}
+<div class="actions">
+  {% if emp.status == 'archived' %}
+  <form method="post" action="/employees/{{ emp.emp_id }}/restore">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Restore</button></form>
+  {% elif emp.kind == 'permanent' %}
+  <form method="post" action="/employees/{{ emp.emp_id }}/archive" onsubmit="return confirm('Archive this employee?')">{{ csrf_field(csrf) }}<button class="danger" type="submit">Archive</button></form>
+  {% endif %}
+  {% if emp.kind == 'temporary' %}
+  <form method="post" action="/employees/{{ emp.emp_id }}/delete" onsubmit="return confirm('Delete this temporary employee? Their logs are kept.')">{{ csrf_field(csrf) }}<button class="danger" type="submit">Delete temporary employee</button></form>
+  {% endif %}
+</div>
+{% elif emp %}<p class="muted">Built-in employee: can be renamed and re-instructed, but not archived or deleted.</p>{% endif %}
+
+{% if history %}
+<h2>Recent activity</h2>
+<table><tr><th>Time</th><th>Who</th><th>Event</th></tr>
+  {% for e in history %}<tr><td class="muted">{{ e.ts|ts }}</td><td>{{ who(e) }}</td><td>{{ e.summary }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+{% endblock %}

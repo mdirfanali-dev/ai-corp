@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, who %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ item.title }}</h1><a href="/inbox">← Inbox</a></div>
+<div class="item sev-{{ item.severity }}">
+  <div class="head"><span class="badge">{{ item.category }}</span><span class="badge s-{{ 'failed' if item.severity == 'critical' else 'blocked' if item.severity == 'warn' else 'running' }}">{{ item.severity }}</span>
+    {% if item.resolved_at %}<span class="pill">resolved {{ item.resolved_at|ts }}</span>{% else %}<span class="pill">open</span>{% endif %}
+    {% if item.snoozed %}<span class="pill">snoozed until {{ item.snooze_until|ts }}</span>{% endif %}</div>
+  <p>{{ item.detail }}</p>
+  <dl class="kv">
+    <dt>First seen</dt><dd>{{ item.created_at|ts }}</dd>
+    <dt>Last seen</dt><dd>{{ item.last_seen_at|ts }}{% if item.repeat_count > 1 %} ({{ item.repeat_count }} checks)</dd>{% else %}</dd>{% endif %}
+    <dt>Cause</dt><dd>{{ item.dedupe_key }}</dd>
+    {% if item.link %}<dt>Go to</dt><dd><a href="{{ item.link }}">{{ item.link }}</a></dd>{% endif %}
+  </dl>
+  <h2>Delivery</h2>
+  <table><tr><th>Channel</th><th>Status</th><th>When</th><th>Note</th></tr>
+    {% for d in item.deliveries %}<tr><td>{{ d.channel }}</td><td><span class="chan {{ d.status }}">{{ d.status }}</span></td><td class="muted">{{ (d.sent_at or d.attempted_at)|ts }}</td><td>{{ d.error or '' }}</td></tr>{% endfor %}
+  </table>
+  <form method="post" action="/inbox/action" class="actions">
+    {{ csrf_field(csrf) }}<input type="hidden" name="ids" value="{{ item.id }}"><input type="hidden" name="next" value="/inbox/{{ item.id }}">
+    <button name="action" value="unread" class="secondary" type="submit">Mark unread</button>
+    <button name="action" value="{{ 'unpin' if item.pinned else 'pin' }}" class="secondary" type="submit">{{ 'Unpin' if item.pinned else 'Pin' }}</button>
+    <select name="snooze_for" style="width:auto">{% for o in snooze_options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}</select>
+    <button name="action" value="snooze" class="secondary" type="submit">Snooze</button>
+    {% if item.snoozed %}<button name="action" value="unsnooze" class="secondary" type="submit">Un-snooze</button>{% endif %}
+    <button name="action" value="ack" type="submit">Acknowledge</button>
+  </form>
+</div>
+{% if related %}
+<h2>Related activity</h2>
+<table><tr><th>Time</th><th>Who</th><th>Event</th></tr>
+  {% for e in related %}<tr><td class="muted">{{ e.ts|ts }}</td><td>{{ who(e) }}</td><td><span class="badge">{{ e.type }}</span> {{ e.summary }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+{% endblock %}

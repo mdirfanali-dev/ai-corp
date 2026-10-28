@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, errors_box %}
+{% block title %}{{ team.name if team else 'New team' }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ team.name if team else 'New team' }}</h1><a href="/teams">← All teams</a></div>
+{{ errors_box(errors) }}
+<form method="post" action="{{ '/teams/' ~ team.team_id if team else '/teams' }}" class="panel">
+  {{ csrf_field(csrf) }}
+  <label for="name" style="margin-top:0">Team name</label>
+  <input id="name" type="text" name="name" value="{{ f.name }}" maxlength="60" required>
+  <label for="description">Description</label>
+  <input id="description" type="text" name="description" value="{{ f.description }}">
+  <label for="head_emp_id">Head</label>
+  <select id="head_emp_id" name="head_emp_id"><option value="">— none —</option>
+    {% for p in people %}<option value="{{ p.emp_id }}" {{ 'selected' if f.head_emp_id == p.emp_id }}>{{ p.name }}</option>{% endfor %}</select>
+  <label>Members <span class="muted">(the head is added automatically)</span></label>
+  <div class="chips">{% for p in people %}
+    <label class="inline"><input type="checkbox" name="member_ids" value="{{ p.emp_id }}" {{ 'checked' if p.emp_id in f.member_ids }}> {{ p.name }}</label>
+  {% endfor %}</div>
+  <div class="actions"><button type="submit">{{ 'Save changes' if team else 'Create team' }}</button></div>
+</form>
+{% if team %}
+<form method="post" action="/teams/{{ team.team_id }}/delete" onsubmit="return confirm('Delete this team? Members and logs are kept.')" style="margin-top:14px">
+  {{ csrf_field(csrf) }}<button class="danger" type="submit">Delete team</button></form>
+{% endif %}
+{% endblock %}

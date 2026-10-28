@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ s.name }} <span class="badge {{ 's-blocked' if s.status in ('unvetted', 'changed', 'rejected') else '' }}">{{ s.status }}</span></h1><a href="/skills">← Skills</a></div>
+<div class="two"><div class="panel"><dl class="kv"><dt>For</dt><dd>{{ s.description }}</dd><dt>Source</dt><dd>{{ s.source }}</dd><dt>Licence</dt><dd>{{ s.license or '-' }}</dd><dt>Version</dt><dd>{{ s.version or '-' }}</dd>
+<dt>Employees</dt><dd>{{ s.employees|join(', ') or 'anyone who lists it' }}</dd><dt>Keywords</dt><dd>{{ s.keywords|join(', ') or 'the name only' }}</dd>
+<dt>Listed by</dt><dd>{{ users|join(', ') or 'nobody yet' }}</dd><dt>Size</dt><dd>{{ s.bytes }} bytes (about {{ (s.bytes / 4)|round|int }} tokens if it is loaded)</dd><dt>SHA-256</dt><dd><code>{{ s.sha256[:16] }}…</code></dd>
+{% if s.vetted_by %}<dt>Vetted</dt><dd>by {{ s.vetted_by }}, {{ s.vetted_at|ts }}</dd>{% endif %}</dl></div>
+<div class="panel"><h2 style="margin-top:0">Automatic scan</h2>{% for f in s.findings %}<p><span class="badge {{ 's-blocked' if f.level == 'block' else '' }}">{{ f.level }}</span> {{ f.text }}</p>{% else %}<p class="muted">Nothing found.</p>{% endfor %}</div></div>
+{% if s.status != 'own' %}
+<div class="panel"><h2 style="margin-top:0">Vetting checklist</h2>
+  <form method="post" action="/skills/{{ s.name }}/vet">{{ csrf_field(csrf) }}
+    {% for i in items %}{% if i.auto %}<p>{{ '✔' if i.ok else '✘' }} {{ i.text }}{% if i.detail %} - {{ i.detail }}{% endif %}</p>
+    {% else %}<label class="inline"><input type="checkbox" name="confirm" value="{{ i.key }}"> {{ i.text }}{% if i.detail %} <span class="muted">({{ i.detail }})</span>{% endif %}</label>{% endif %}{% endfor %}
+    <input type="text" name="note" placeholder="Note (optional)" style="max-width:360px"> <button type="submit">Vet this exact version</button></form>
+  <form method="post" action="/skills/{{ s.name }}/reject" class="actions">{{ csrf_field(csrf) }}<button class="danger" type="submit">Reject</button></form>
+  <p class="hint">Until it is vetted, no agent receives this skill. If the file changes afterwards, it must be vetted again.</p></div>
+{% endif %}
+<h2>Content</h2><pre class="report">{{ s.body }}</pre>
+<form method="post" action="/skills/{{ s.name }}/remove">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Remove (moves it to .trash)</button></form>
+{% endblock %}

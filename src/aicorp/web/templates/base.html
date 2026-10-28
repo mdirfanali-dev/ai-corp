@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · AICorp</title>
+  <meta name="csrf" content="{{ csrf }}">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">AICorp</a>
+  <nav>
+    {% for href, label in nav %}
+    <a href="{{ href }}" class="{{ 'on' if (path == href or (href != '/' and path.startswith(href))) else '' }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <span class="bellwrap">
+    <button type="button" id="bell-btn" class="bell" aria-haspopup="true" aria-expanded="false" title="Notifications">Notifications
+      <span class="count" id="bell-count" {{ 'hidden' if not inbox_unread }}>{{ inbox_unread }}</span></button>
+    <div id="bell-panel" class="bellpanel" hidden></div>
+  </span>
+  <span class="engine {{ 'on' if engine.running else 'off' }}" title="Task engine">
+    {% if engine.running %}● Engine {{ engine.active }}/{{ engine.cap }} running{% if engine.mode == 'simulated' %} · simulated{% endif %}{% else %}○ Engine stopped{% endif %}</span>
+</header>
+{% if imp %}
+<div class="banner {{ 'override' if imp.override else 'imp' }}">{% if imp.override %}<b>FOUNDER OVERRIDE</b> - you are acting as <b>{{ imp.target_name }}</b>{% if imp.target_role %} ({{ imp.target_role }}){% endif %} with <b>no permission limits</b>{% else %}You are <b>acting as {{ imp.target_name }}</b>{% if imp.target_role %} ({{ imp.target_role }}){% endif %}: only that person's permissions apply{% endif %}. Everything is logged as "Founder ▶ acting as {{ imp.target_name }}".
+  <form method="post" action="/impersonate/stop" style="display:inline">{% from "_macros.html" import csrf_field %}{{ csrf_field(csrf) }}<button class="secondary" type="submit">Stop acting as {{ imp.target_name }}</button></form></div>
+{% endif %}
+{% if kill is not none %}
+<div class="banner">Kill switch engaged — all workers stopped, nothing will start{% if kill.reason %}: {{ kill.reason }}{% endif %}.
+  <form method="post" action="/killswitch/release" style="display:inline">{% from "_macros.html" import csrf_field %}{{ csrf_field(csrf) }}<button class="secondary" type="submit">Release</button></form></div>
+{% endif %}
+<main>
+  {% if ok %}<div class="flash ok">{{ ok }}</div>{% endif %}
+  {% if err_flash %}<div class="flash err">{{ err_flash }}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/bell.js" defer></script>
+</body>
+</html>

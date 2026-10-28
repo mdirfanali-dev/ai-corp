@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Act as someone{% endblock %}
+{% block content %}
+<h1>Act as someone else</h1>
+<div class="panel">
+  <p class="hint">While you act as an employee, everything you do is logged as <b>Founder ▶ acting as &lt;name&gt; (&lt;role&gt;)</b> - your own identity is never replaced. By default only that person's permissions apply (so you cannot approve, change roles, or assign work unless they could). The guardrails - protected files, secrets, the kill switch - apply in every mode. The session ends after 2 hours.</p>
+  {% if imp %}<p><b>Active:</b> acting as {{ imp.target_name }}{% if imp.override %} <span class="badge override">override</span>{% endif %}.</p>
+  <form method="post" action="/impersonate/stop">{{ csrf_field(csrf) }}<button type="submit">Stop acting as {{ imp.target_name }}</button></form>
+  {% else %}
+  <form method="post" action="/impersonate/start">{{ csrf_field(csrf) }}
+    <label for="employee">Act as</label>
+    <select id="employee" name="employee" required>{% for e in people %}<option value="{{ e.emp_id }}" {{ 'selected' if e.emp_id == preselect }}>{{ e.name }}{% if e.roles %} ({{ e.roles|map(attribute='name')|join(', ') if e.roles and e.roles[0] is mapping else e.roles|join(', ') }}){% endif %}</option>{% endfor %}</select>
+    <label for="reason">Why (optional, kept in the log)</label><input id="reason" type="text" name="reason" maxlength="300">
+    <details style="margin:12px 0"><summary>Founder override (advanced)</summary>
+      <p class="hint">Lifts the role's permission limits for this session. Every event is flagged <span class="badge override">override</span>. Guardrails still apply.</p>
+      <label><input type="checkbox" name="override"> Use the Founder override</label>
+      <label for="confirm">Type OVERRIDE to confirm</label><input id="confirm" type="text" name="confirm" autocomplete="off"></details>
+    <button type="submit">Start acting</button>
+  </form>{% endif %}
+</div>
+<h2>Recent sessions</h2>
+<table><tr><th>Started</th><th>By</th><th>As</th><th>Mode</th><th>Ended</th></tr>
+{% for h in history %}<tr><td class="muted">{{ h.started_at|ts }}</td><td>{{ h.by_name }}</td><td>{{ h.target_name }}</td><td>{% if h.override %}<span class="badge override">override</span>{% else %}role permissions{% endif %}</td><td class="muted">{{ h.ended_at|ts if h.ended_at else 'open' }}{% if h.ended_reason %} ({{ h.ended_reason }}){% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No sessions yet.</td></tr>{% endfor %}</table>
+{% endblock %}

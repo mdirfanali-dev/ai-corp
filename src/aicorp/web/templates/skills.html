@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Skills{% endblock %}
+{% block content %}
+<div class="bar"><h1>Skills</h1><a class="btn" href="/skills/new">Add a skill</a></div>
+<p class="hint">A skill is know-how (a <code>SKILL.md</code> in <code>skills/&lt;name&gt;/</code>) that an agent receives <b>only when the task mentions it</b>, and only if the employee lists it and is allowed to use it. Skills from outside must be <b>vetted</b> by you first.</p>
+<table><tr><th>Skill</th><th>What it is for</th><th>Source</th><th>Status</th><th>Who</th><th>Size</th></tr>
+{% for s in rows %}<tr><td><a href="/skills/{{ s.name }}">{{ s.name }}</a></td><td>{{ s.description }}</td><td>{{ s.source }}{% if s.license %} · {{ s.license }}{% endif %}</td>
+<td><span class="badge {{ 's-blocked' if s.status in ('unvetted', 'changed', 'rejected') else '' }}">{{ s.status }}</span></td><td>{{ s.employees|join(', ') or 'anyone who lists it' }}</td><td class="muted">{{ s.bytes }} B</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No skills yet. Add one, then list its name under "Skills" on an employee.</td></tr>{% endfor %}</table>
+{% endblock %}

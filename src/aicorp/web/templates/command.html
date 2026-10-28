@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Command Center{% endblock %}
+{% block content %}
+<div class="bar"><h1>Command Center</h1><span id="conn" class="conn off">connecting…</span></div>
+
+<div class="grid" id="stats">
+  <div class="stat"><span class="muted">Agents running</span><b id="st-running">–</b></div>
+  <div class="stat"><span class="muted">Memory used</span><b id="st-ram">–</b></div>
+  <div class="stat"><span class="muted">Queued</span><b id="st-queue">–</b></div>
+  <div class="stat"><span class="muted">Blocked</span><b id="st-blocked">–</b></div>
+  <div class="stat"><span class="muted">Need you</span><b id="st-need">–</b></div>
+</div>
+<p id="engine-note" class="muted"></p>
+
+<h2>Leadership</h2>
+<div id="leaders" class="cards"></div>
+
+<h2>Teams</h2>
+<div id="lanes"></div>
+
+<h2>Task dependencies</h2>
+<div class="panel" id="graph-panel"><div id="graph"></div><p id="graph-empty" class="muted" hidden>No open tasks with dependencies.</p></div>
+
+<h2>Live activity</h2>
+<table><thead><tr><th>Time</th><th>Who</th><th>Event</th></tr></thead><tbody id="feed"></tbody></table>
+<p><a href="/logs">Search all logs →</a></p>
+<script src="/static/live.js" defer></script>
+{% endblock %}

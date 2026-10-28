@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Meetings{% endblock %}
+{% block content %}
+<div class="bar"><h1>Meetings</h1><a class="btn" href="/meetings/new">+ New meeting</a></div>
+<table><tr><th>When</th><th>Meeting</th><th>Project</th><th>Status</th></tr>
+{% for m in rows %}<tr><td class="muted">{{ m.scheduled_at|ts if m.scheduled_at else '—' }}</td><td><a href="/meetings/{{ m.meeting_id }}">{{ m.title }}</a></td><td>{{ m.project_name or '—' }}</td>
+  <td><span class="badge {{ 's-failed' if m.status == 'scheduled' and m.scheduled_at and m.scheduled_at < now else '' }}">{{ m.status }}</span></td></tr>
+{% else %}<tr><td colspan="4" class="muted">No meetings yet.</td></tr>{% endfor %}</table>
+{% endblock %}

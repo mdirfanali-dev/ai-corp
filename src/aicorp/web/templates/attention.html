@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Attention{% endblock %}
+{% block content %}
+<div class="bar"><h1>Attention Center</h1><a href="/inbox">All notifications →</a></div>
+<p class="muted">Everything that needs you right now, most urgent and oldest first. It clears by itself when the cause is gone.</p>
+{% for i in items %}
+<div class="item sev-{{ i.severity }}">
+  <div class="head">
+    <span class="badge s-{{ 'failed' if i.severity == 'critical' else 'blocked' if i.severity == 'warn' else 'running' }}">{{ i.severity }}</span>
+    <span class="title">{{ i.who }} — {{ i.label }}</span>
+    {% if i.task_id %}<a href="/tasks/{{ i.task_id }}">{{ i.title }}</a>{% else %}<span>{{ i.title }}</span>{% endif %}
+    <span class="muted">{% if i.since %}since {{ i.since|ts }}{% endif %}</span>
+  </div>
+  {% if i.hint %}<div>{{ i.hint }}</div>{% endif %}
+  {% if i.detail %}<div class="hint">{{ i.detail }}</div>{% endif %}
+  {% if i.resume_at %}<div class="hint">Automatic retry around {{ i.resume_at[11:16] }} UTC.</div>{% endif %}
+  <div class="actions" style="margin-top:8px">
+    {% if 'resolve' in i.actions %}<form method="post" action="/tasks/{{ i.task_id }}/resolve">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/attention"><button type="submit">I fixed it — resume</button></form>{% endif %}
+    {% if 'retry' in i.actions %}<form method="post" action="/tasks/{{ i.task_id }}/retry">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/attention"><button type="submit">Retry</button></form>{% endif %}
+    {% if 'open' in i.actions %}<a class="btn secondary" href="/tasks/{{ i.task_id }}">Open</a>{% endif %}
+    {% if 'release' in i.actions %}<form method="post" action="/killswitch/release">{{ csrf_field(csrf) }}<button type="submit">Release kill switch</button></form>{% endif %}
+    {% if i.task_id and i.kind == 'blocked' %}<a class="mini" href="/tasks/{{ i.task_id }}/takeover">Take over</a>{% endif %}
+    {% if 'cancel' in i.actions %}<form method="post" action="/tasks/{{ i.task_id }}/cancel" onsubmit="return confirm('Cancel this task?')">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/attention"><button class="danger" type="submit">Cancel task</button></form>{% endif %}
+  </div>
+</div>
+{% else %}
+<div class="panel"><b>All clear.</b> <span class="muted">Nothing needs you right now.</span></div>
+{% endfor %}
+{% endblock %}

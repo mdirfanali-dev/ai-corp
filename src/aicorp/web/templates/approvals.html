@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Approvals{% endblock %}
+{% block content %}
+<h1>Approvals</h1>
+<p class="hint">Tier 3 = something that would leave the company (send, publish, push, submit). The agent only prepares a <b>draft</b>; approving marks the draft accepted - AICorp never sends or publishes anything itself, you do that with the draft. Tier 4 (money, legal, accounts, credentials) is never started by an agent.</p>
+<h2>Waiting for your decision ({{ pending|length }})</h2>
+{% for t in pending %}
+<div class="box"><div class="bar"><b><a href="/tasks/{{ t.task_id }}">{{ t.title }}</a></b><span class="muted">tier {{ t.risk_tier }} · {{ t.owner_name or 'unassigned' }} · asked {{ t.approval.requested_at|ts }}</span></div>
+  <p style="white-space:pre-wrap">{{ t.result_summary or 'No summary was written.' }}</p>
+  {% if t.artifacts %}<p class="hint">Draft files: {% for a in t.artifacts %}<code>{{ a.path }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  <details><summary>The Advisor's challenge ({{ t.challenge|length }} point{{ '' if t.challenge|length == 1 else 's' }})</summary>
+    <ul>{% for c in t.challenge %}<li><span class="badge {{ 's-blocked' if c.severity == 'warn' else '' }}">{{ c.severity }}</span> {{ c.text }}</li>{% endfor %}</ul></details>
+  <form method="post" action="/tasks/{{ t.task_id }}/decide" class="actions">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/approvals">
+    <input type="text" name="note" placeholder="Note (optional)" style="max-width:300px">
+    <button name="decision" value="approved" type="submit">Approve the draft</button>
+    <button name="decision" value="revise" class="secondary" type="submit">Ask for changes</button>
+    <button name="decision" value="rejected" class="danger" type="submit">Reject</button></form></div>
+{% else %}<p class="muted">Nothing is waiting for you.</p>{% endfor %}
+
+<h2>Critical (tier 4) - yours to do ({{ critical|length }})</h2>
+{% for t in critical %}<div class="box"><a href="/tasks/{{ t.task_id }}">{{ t.title }}</a> <span class="badge s-{{ t.status }}">{{ t.status|replace('_',' ') }}</span>
+  <span class="muted">An agent never starts this.</span> <a class="btn secondary" href="/tasks/{{ t.task_id }}/takeover">Handle it myself</a></div>
+{% else %}<p class="muted">No open critical tasks.</p>{% endfor %}
+
+<h2>Decided</h2>
+<table><tr><th>When</th><th>Task</th><th>Tier</th><th>Decision</th><th>Note</th></tr>
+{% for h in history %}<tr><td class="muted">{{ h.decided_at|ts }}</td><td><a href="/tasks/{{ h.task_id }}">{{ h.title }}</a></td><td>{{ h.tier }}</td><td><span class="badge">{{ h.decision }}</span></td><td>{{ h.note or '' }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No decisions yet.</td></tr>{% endfor %}</table>
+{% endblock %}

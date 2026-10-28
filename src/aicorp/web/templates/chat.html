@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Chat log{% endblock %}
+{% block content %}
+<div class="bar"><h1>Chat log</h1><a href="/advisor">← Desk</a></div>
+<form method="get" action="/chat" class="actions" style="margin:0 0 12px">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search messages" aria-label="Search messages">
+  <select name="channel" aria-label="Channel"><option value="">All channels</option><option value="telegram" {{ 'selected' if channel == 'telegram' }}>Telegram</option><option value="email" {{ 'selected' if channel == 'email' }}>E-mail</option></select>
+  <button type="submit">Search</button>
+</form>
+<table><tr><th>When</th><th>Channel</th><th>From</th><th>Message</th><th>Handled as</th></tr>
+{% for r in rows %}<tr><td class="muted">{{ r.ts|ts }}</td><td><span class="badge">{{ r.channel }}</span></td>
+<td>{{ 'Advisor' if r.direction == 'out' else r.sender }}</td><td style="white-space:pre-wrap">{{ r.text }}</td>
+<td class="muted">{{ r.handled_as or '—' }}{% if r.state %} · {{ r.state }}{% endif %}{% if r.task_id %} · <a href="/tasks/{{ r.task_id }}">task</a>{% endif %}{% if r.error %}<br>{{ r.error }}{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No messages yet. Send /help to your Telegram bot, or e-mail yourself with [AICorp] in the subject.</td></tr>{% endfor %}</table>
+{% endblock %}

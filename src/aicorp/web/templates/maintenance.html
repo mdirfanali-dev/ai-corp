@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Maintenance{% endblock %}
+{% block content %}
+<div class="bar"><h1>Maintenance &amp; trash</h1><a href="/settings">← Settings</a></div>
+<div class="two">
+<div class="panel"><h2 style="margin-top:0">Size</h2><dl class="kv">
+  <dt>Database</dt><dd>{{ (sizes.db_bytes / 1048576)|round(1) }} MB (+ {{ (sizes.wal_bytes / 1048576)|round(1) }} MB write-ahead log)</dd>
+  <dt>Audit log</dt><dd>{{ sizes.events }} events · about {{ sizes.bytes_per_event }} bytes each · {{ sizes.events_per_day }} per day lately → about {{ sizes.events_year_mb }} MB per year at this rate</dd>
+  <dt>Disk free</dt><dd>{{ (sizes.disk_free_bytes / 1073741824)|round(1) }} GB</dd></dl>
+  <p class="hint">The audit log is never pruned: it is append-only and tamper-evident. Only bulky operational records (old job runs, delivery attempts) are pruned, and old run logs are compressed.</p></div>
+<div class="panel"><h2 style="margin-top:0">Health check</h2>
+  {% if last %}<p>Last run {{ last.at|ts }}: integrity <b>{{ last.integrity }}</b>, audit chain <b>{{ 'intact' if last.chain_ok else 'BROKEN' }}</b>.</p>
+  {% for d in last.did %}<p class="muted">{{ d }}</p>{% endfor %}{% else %}<p class="muted">Not run yet (it runs weekly while the engine or watchdog is on).</p>{% endif %}
+  <form method="post" action="/maintenance/run">{{ csrf_field(csrf) }}<button type="submit">Run maintenance now</button></form></div>
+</div>
+<h2>Trash ({{ sizes.trash_items }} item(s), {{ (sizes.trash_bytes / 1048576)|round(1) }} MB)</h2>
+<p class="hint">Deleted files wait here for 30 days. Nothing is removed automatically.</p>
+<table><tr><th>Item</th><th>Came from</th><th>Reason</th><th>Deleted</th><th>Can be purged after</th><th></th></tr>
+{% for e in trash %}<tr><td>{{ e.trashed }}</td><td>{{ e.original }}</td><td>{{ e.reason or '' }}</td><td class="muted">{{ e.ts|ts if e.ts else '' }}</td>
+<td class="muted">{{ e.expires_at|ts }}{% if e.expires_at <= now %} <span class="badge">due</span>{% endif %}</td>
+<td><form method="post" action="/maintenance/trash/restore">{{ csrf_field(csrf) }}<input type="hidden" name="item" value="{{ e.trashed }}"><button class="secondary mini" type="submit">Restore</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="muted">The trash is empty.</td></tr>{% endfor %}</table>
+{% if sizes.trash_expired %}<form method="post" action="/maintenance/trash/purge" class="actions">{{ csrf_field(csrf) }}
+<label class="inline"><input type="checkbox" name="confirm"> I understand that purging deletes the {{ sizes.trash_expired }} expired item(s) permanently</label><button class="danger" type="submit">Purge expired items</button></form>{% endif %}
+{% endblock %}

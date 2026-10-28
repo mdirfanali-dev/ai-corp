@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Take over{% endblock %}
+{% block content %}
+<div class="bar"><h1>Take over: {{ task.title }} <span class="badge s-{{ task.status }}">{{ task.status|replace('_',' ') }}</span></h1><a href="/tasks/{{ task.task_id }}">← Task</a></div>
+{% if not to %}
+<div class="panel"><p>Stops the agent{% if task.owner_name %} ({{ task.owner_name }}){% endif %}, saves where it was, and lets you work in this task yourself. Afterwards you can let the agent continue (with your notes), finish the task yourself, or cancel it. Everything is logged as <b>Founder ▶ acting as {{ task.owner_name }}</b>, mode <b>interrupt</b>.</p>
+  {% if task.status in ('running', 'assigned', 'blocked') %}<form method="post" action="/tasks/{{ task.task_id }}/takeover/start">{{ csrf_field(csrf) }}<button class="danger" type="submit">Interrupt and take over</button></form>
+  {% else %}<p class="hint">A {{ task.status|replace('_',' ') }} task cannot be taken over.</p>{% endif %}</div>
+{% elif to.status == 'requested' %}
+<div class="panel"><b>Stopping the agent...</b> The engine is asking it to stop; this page fills in within a few seconds. <a href="/tasks/{{ task.task_id }}/takeover">Reload</a>{% if not engine.running %}<br><span class="hint">The task engine is not running, so the agent is not working; start the engine, or it will settle as soon as the engine looks at it.</span>{% endif %}</div>
+{% else %}
+<div class="two">
+  <div class="panel"><h2 style="margin-top:0">Where the agent was</h2>
+    <dl class="kv"><dt>Task</dt><dd>{{ to.snapshot.title }}</dd><dt>Saved at</dt><dd>{{ to.snapshot.taken_at|ts }}</dd>
+    <dt>Checkpoint</dt><dd style="white-space:pre-wrap">{{ to.snapshot.checkpoint or 'none (the agent had not saved one)' }}</dd>
+    <dt>Workspace</dt><dd><code>{{ workspace }}</code>{% for f in to.snapshot.workspace_files %}<br>{{ f }}{% else %}<br><span class="muted">no files yet</span>{% endfor %}</dd></dl>
+    <details><summary>Recent events</summary><table>{% for e in to.snapshot.recent_events %}<tr><td class="muted">{{ e.ts|ts }}</td><td>{{ e.summary }}</td></tr>{% endfor %}</table></details></div>
+  <div class="panel"><h2 style="margin-top:0">Your work</h2>
+    {% for n in to.notes %}<p><span class="badge">{{ n.kind }}</span> {{ n.text }} <span class="muted">{{ n.ts|ts }}</span></p>{% else %}<p class="muted">Nothing yet.</p>{% endfor %}
+    <form method="post" action="/takeover/{{ to.takeover_id }}/note">{{ csrf_field(csrf) }}<label for="text">Add a note for the log and for the agent</label><textarea id="text" name="text" rows="3" maxlength="4000" required></textarea><button type="submit">Save note</button></form>
+    <form method="post" action="/takeover/{{ to.takeover_id }}/file">{{ csrf_field(csrf) }}<label for="path">Write a file into the workspace (relative path)</label><input id="path" type="text" name="path" placeholder="notes/summary.md" required><textarea name="content" rows="4" aria-label="File content"></textarea><button class="secondary" type="submit">Write file</button>
+      <p class="hint">The same path rules as for agents apply: protected files, secrets and anything outside this workspace are refused - even with an override.</p></form></div>
+</div>
+<div class="panel"><h2 style="margin-top:0">Finish the take-over</h2>
+  <form method="post" action="/takeover/{{ to.takeover_id }}/end" class="actions">{{ csrf_field(csrf) }}<input type="hidden" name="action" value="resume"><button type="submit">Let the agent continue (with my notes)</button></form>
+  <form method="post" action="/takeover/{{ to.takeover_id }}/end">{{ csrf_field(csrf) }}<input type="hidden" name="action" value="complete"><label for="result">Or finish it yourself - the result:</label><textarea id="result" name="result" rows="3" maxlength="4000"></textarea><button class="secondary" type="submit">Mark done with this result</button></form>
+  <form method="post" action="/takeover/{{ to.takeover_id }}/end" class="actions">{{ csrf_field(csrf) }}<input type="hidden" name="action" value="cancel"><button class="danger" type="submit">Cancel the task</button></form></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Advisor Desk{% endblock %}
+{% block content %}
+<div class="bar"><h1>Advisor Desk</h1>
+  <div class="actions" style="margin:0">
+    <form method="post" action="/advisor/monitor">{{ csrf_field(csrf) }}<input type="hidden" name="state" value="{{ 'off' if monitor else 'on' }}">
+      <span class="pill">Monitor: <b>{{ 'ON' if monitor else 'OFF' }}</b></span> <button class="secondary" type="submit">Turn {{ 'off' if monitor else 'on' }}</button></form>
+    <a class="btn" href="/advisor/review">Review one by one ({{ unreviewed }})</a>
+    <a class="btn secondary" href="/advisor/reports">Reports</a><a class="btn secondary" href="/advisor/schedule">Schedule</a>
+  </div></div>
+<p class="muted">Everything that is active — projects, meetings, approvals, deadlines, forgotten items — in one place. Acknowledging an item stops the reminders; it stays here until its cause is gone.</p>
+<div class="tabs">{% for t in tabs %}<a class="tab {{ 'on' if t == tab }}" href="/advisor?tab={{ t }}{{ '&snoozed=1' if snoozed }}">{{ {'all':'All','today':'Today','week':'This week','overdue':'Overdue','forgotten':'Forgotten','waiting':'Waiting on me'}[t] }} <span class="count">{{ counts[t] }}</span></a>{% endfor %}
+  <a class="tab" href="/advisor?tab={{ tab }}&snoozed={{ '' if snoozed else '1' }}">{{ 'Hide' if snoozed else 'Show' }} snoozed</a></div>
+<form method="post" action="/inbox/action">
+  {{ csrf_field(csrf) }}<input type="hidden" name="next" value="/advisor?tab={{ tab }}">
+  <label class="inline"><input type="checkbox" id="select-all"> Select all shown</label>
+  {% for name, items in groups %}
+  <h2>{{ name }}</h2>
+  {% for i in items %}
+  <div class="item sev-{{ i.severity }} {{ 'unread' if not i.read_at }}">
+    <div class="head"><input type="checkbox" name="ids" value="{{ i.id }}" aria-label="select">
+      <a class="title" href="{{ i.link or '/inbox/' ~ i.id }}">{{ i.title }}</a><span class="badge">{{ i.category }}</span>
+      {% if i.overdue %}<span class="badge s-failed">overdue</span>{% endif %}{% if i.waiting_on_me %}<span class="badge s-blocked">needs you</span>{% endif %}
+      {% if i.forgotten %}<span class="badge s-failed">forgotten</span>{% endif %}{% if i.snoozed %}<span class="pill">snoozed</span>{% endif %}{% if i.ack_at %}<span class="pill">acknowledged</span>{% endif %}
+      <span class="muted">{{ i.age_label }} {{ i.age_text }}</span></div>
+    <div>{{ i.detail }}</div>
+  </div>
+  {% endfor %}
+  {% else %}<div class="panel"><b>Nothing here.</b> <span class="muted">All clear for this view.</span></div>{% endfor %}
+  {% if total %}<div class="bulk">
+    <button type="submit" name="action" value="ack">Acknowledge selected</button>
+    <button type="submit" name="action" value="read" class="secondary">Mark selected read</button>
+    <select name="snooze_for"><option value="1h">1 hour</option><option value="4h">4 hours</option><option value="1d" selected>1 day</option><option value="3d">3 days</option></select>
+    <button type="submit" name="action" value="snooze" class="secondary">Snooze selected</button></div>{% endif %}
+</form>
+{% if total %}
+<form method="post" action="/inbox/action" style="margin-top:10px">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/advisor?tab={{ tab }}">
+  {% for name, items in groups %}{% for i in items %}<input type="hidden" name="ids" value="{{ i.id }}">{% endfor %}{% endfor %}
+  <button class="secondary" name="action" value="ack" type="submit" onclick="return confirm('Acknowledge all {{ total }} items shown?')">Acknowledge everything shown ({{ total }})</button></form>
+{% endif %}
+<script src="/static/inbox.js" defer></script>
+{% endblock %}

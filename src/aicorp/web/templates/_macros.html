@@ -1,0 +1,3 @@
+{% macro csrf_field(token) %}<input type="hidden" name="csrf_token" value="{{ token }}">{% endmacro %}
+{% macro errors_box(errors) %}{% if errors %}<ul class="errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}{% endmacro %}
+{% macro who(e) %}{% if e.payload and '"override":true' in e.payload %}<span class="badge override" title="Founder override">override</span> {% endif %}{{ e.actor_name }}{% if e.actor_designation %} <span class="muted">({{ e.actor_designation }})</span>{% endif %}{% if e.acting_as_name %} ▶ acting as <b>{{ e.acting_as_name }}</b>{% if e.acting_as_role %} <span class="muted">({{ e.acting_as_role }})</span>{% endif %}{% endif %}{% endmacro %}

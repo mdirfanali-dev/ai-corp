@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, errors_box %}
+{% block title %}New task{% endblock %}
+{% block content %}
+<div class="bar"><h1>New task</h1><a href="/tasks">← All tasks</a></div>
+{{ errors_box(errors) }}
+<form method="post" action="/tasks" class="panel">
+  {{ csrf_field(csrf) }}
+  <label for="title" style="margin-top:0">Title</label>
+  <input id="title" type="text" name="title" value="{{ f.title }}" maxlength="60" required>
+  <label for="description">Description</label>
+  <textarea id="description" name="description" style="min-height:90px">{{ f.description }}</textarea>
+  <div class="two">
+    <div>
+      <label for="owner">Owner</label>
+      <select id="owner" name="owner"><option value="">— unassigned —</option>
+        {% for p in people %}<option value="{{ p.emp_id }}" {{ 'selected' if f.owner == p.emp_id }}>{{ p.name }}{{ '' if p.capabilities.execute else ' (read-only)' }}</option>{% endfor %}</select>
+      <label for="parent_id">Parent task <span class="muted">(makes this a sub-task; max depth 3)</span></label>
+      <select id="parent_id" name="parent_id"><option value="">— none —</option>
+        {% for t in open_tasks %}<option value="{{ t.task_id }}" {{ 'selected' if f.parent_id == t.task_id }}>{{ t.title }}</option>{% endfor %}</select>
+      <label for="due_at">Due <span class="muted">(optional, your local time)</span></label>
+      <input id="due_at" type="datetime-local" name="due_at" value="{{ f.due_at }}">
+    </div>
+    <div>
+      <label for="priority">Priority <span class="muted">(1 urgent … 5 low)</span></label>
+      <select id="priority" name="priority">{% for n in range(1, 6) %}<option value="{{ n }}" {{ 'selected' if f.priority|int == n }}>{{ n }}</option>{% endfor %}</select>
+      <label for="risk_tier">Risk tier</label>
+      <select id="risk_tier" name="risk_tier">
+        {% for n, label in [(0,'0 · read-only'),(1,'1 · draft in own folder'),(2,'2 · run locally'),(3,'3 · external (needs approval)'),(4,'4 · critical (never automatic)')] %}
+        <option value="{{ n }}" {{ 'selected' if f.risk_tier|int == n }}>{{ label }}</option>{% endfor %}</select>
+      <label>Waits for <span class="muted">(starts only after these are done)</span></label>
+      <div class="chips" style="max-height:140px;overflow:auto">{% for t in open_tasks %}
+        <label class="inline"><input type="checkbox" name="depends_on" value="{{ t.task_id }}" {{ 'checked' if t.task_id in f.depends_on }}> {{ t.title }}</label>
+      {% else %}<span class="muted">No open tasks.</span>{% endfor %}</div>
+    </div>
+  </div>
+  <div class="actions"><button type="submit">Create task</button></div>
+</form>
+{% endblock %}

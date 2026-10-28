@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import who %}
+{% block title %}Logs{% endblock %}
+{% block content %}
+<div class="bar"><h1>Logs</h1>
+  {% if chain %}<span class="{{ 'chain-ok' if chain.ok else 'chain-bad' }}">
+    {% if chain.ok %}✔ audit chain verified ({{ chain.count }} events){% else %}✖ audit chain BROKEN at event {{ chain.bad_id }}: {{ chain.reason }}{% endif %}</span>{% endif %}
+</div>
+<form method="get" class="filters">
+  <div style="grid-column: span 2"><label for="q">Search everything</label><input id="q" type="search" name="q" value="{{ params.q }}" placeholder="words from any log entry"></div>
+  <div><label for="actor">Person</label><input id="actor" type="text" name="actor" value="{{ params.actor }}" placeholder="name"></div>
+  <div><label for="task">Task ID</label><input id="task" type="text" name="task" value="{{ params.task }}"></div>
+  <div><label for="mode">Mode</label><select id="mode" name="mode"><option value="">Any</option>
+    {% for m in ['normal','impersonate','interrupt','chat'] %}<option value="{{ m }}" {{ 'selected' if params.mode == m }}>{{ m }}</option>{% endfor %}</select></div>
+  <div><label for="type">Event type</label><input id="type" type="text" name="type" value="{{ params.type }}" placeholder="employee.created"></div>
+  <div><label for="since">From (UTC)</label><input id="since" type="date" name="since" value="{{ params.since }}"></div>
+  <div><label for="until">To (UTC)</label><input id="until" type="date" name="until" value="{{ params.until }}"></div>
+  <div><button type="submit">Search</button></div>
+</form>
+<table>
+  <tr><th>Time</th><th>Who</th><th>Type</th><th>What</th></tr>
+  {% for e in rows %}
+  <tr>
+    <td class="muted" style="white-space:nowrap">{{ e.ts|ts }}</td>
+    <td>{{ who(e) }}{% if e.mode != 'normal' %} <span class="badge on">{{ e.mode }}</span>{% endif %}</td>
+    <td><span class="badge">{{ e.type }}</span></td>
+    <td>{{ e.snippet|mark }}{% if e.task_id %} <span class="muted">· {{ e.task_id }}</span>{% endif %}
+      <details><summary>details</summary><pre>{{ e.summary }}
+{{ e.payload }}</pre></details></td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="muted">No matching events.</td></tr>{% endfor %}
+</table>
+<div class="actions">
+  {% if page > 1 %}<a class="btn secondary" href="{{ newer_url }}">← Newer</a>{% endif %}
+  {% if more %}<a class="btn secondary" href="{{ older_url }}">Older →</a>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="bar"><h1>Reports</h1><a href="/advisor">← Desk</a></div>
+<div class="actions" style="margin:0 0 12px">{% for k in kinds %}<a class="btn {{ '' if k == kind else 'secondary' }}" href="/advisor/reports?kind={{ k }}">{{ k }}</a>{% endfor %}{% if kind %}<a class="btn secondary" href="/advisor/reports">All</a>{% endif %}</div>
+<table><tr><th>When</th><th>Report</th><th>Kind</th></tr>
+{% for r in rows %}<tr><td class="muted">{{ r.created_at|ts }}</td><td><a href="/advisor/reports/{{ r.report_id }}">{{ r.title }}</a></td><td><span class="badge">{{ r.kind }}</span></td></tr>
+{% else %}<tr><td colspan="3" class="muted">No reports yet. The Advisor writes a daily briefing at 08:00 while the monitor is on; use "Run now" on the schedule page to try it.</td></tr>{% endfor %}</table>
+{% endblock %}

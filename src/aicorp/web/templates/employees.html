@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="bar"><h1>Employees</h1><a class="btn" href="/employees/new">+ New employee</a></div>
+<form method="get" class="filters">
+  <div><label for="q">Name</label><input id="q" type="search" name="q" value="{{ q }}" placeholder="Search name"></div>
+  <div><label for="kind">Kind</label><select id="kind" name="kind"><option value="">All</option>
+    {% for k in ['permanent','temporary','system'] %}<option value="{{ k }}" {{ 'selected' if kind == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div><label for="status">Status</label><select id="status" name="status"><option value="">All</option>
+    {% for k in ['idle','working','blocked','paused','archived'] %}<option value="{{ k }}" {{ 'selected' if status == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div><label for="team">Team</label><select id="team" name="team"><option value="">All</option>
+    {% for t in teams %}<option value="{{ t.team_id }}" {{ 'selected' if team == t.team_id }}>{{ t.name }}</option>{% endfor %}</select></div>
+  <div><label class="inline"><input type="checkbox" name="deleted" value="1" {{ 'checked' if deleted }}> Show deleted</label></div>
+  <div><button type="submit" class="secondary">Filter</button></div>
+</form>
+<table>
+  <tr><th>Name</th><th>Kind</th><th>Status</th><th>Roles</th><th>Teams</th><th>Reports to</th></tr>
+  {% for e in rows %}
+  <tr>
+    <td><a href="/employees/{{ e.emp_id }}">{{ e.name }}</a></td>
+    <td><span class="badge {{ e.kind }}">{{ e.kind }}</span>{% if e.expires_at %}<div class="hint">until {{ e.expires_at[:16]|replace('T',' ') }} UTC</div>{% endif %}</td>
+    <td><span class="badge {{ 'archived' if e.status == 'archived' }}">{{ e.status }}</span></td>
+    <td>{% if e.roles %}{{ e.roles|map(attribute='name')|join(', ') }}{% else %}<span class="muted">none (bench)</span>{% endif %}</td>
+    <td>{{ e.teams|map(attribute='name')|join(', ') }}</td>
+    <td>{{ e.manager or '—' }}</td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="muted">No employees match.</td></tr>{% endfor %}
+</table>
+{% endblock %}

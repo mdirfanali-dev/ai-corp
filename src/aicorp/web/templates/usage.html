@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Usage{% endblock %}
+{% block content %}
+<div class="bar"><h1>Usage</h1><span>{% for d in (7, 30, 90) %}<a class="btn {{ '' if u.days == d else 'secondary' }}" href="/usage?days={{ d }}">{{ d }} days</a> {% endfor %}</span></div>
+<p class="hint">Tokens are what Claude Code reported for each run (when it reported them). Prompt sizes are characters actually sent; the comparison is against a defined naive prompt (everything pasted in full, all skills, history re-sent). {{ cpt }} characters ≈ 1 token is a rough <i>assumption</i>. The saving is only about the part AICorp controls (the task prompt); Claude Code adds its own fixed system prompt and tool descriptions to every run, so the saving in <i>total</i> tokens is much smaller than the saving in prompt size.</p>
+<div class="two">
+  <div class="panel"><dl class="kv"><dt>Runs</dt><dd>{{ u.runs }}</dd><dt>Tokens reported</dt><dd>{{ u.tokens }}</dd>
+  <dt>Prompt sent</dt><dd>{{ u.prompt_chars }} characters (≈ {{ u.prompt_tokens_est }} tokens) over {{ u.measured_runs }} measured run(s)</dd>
+  <dt>Naive baseline</dt><dd>{{ u.baseline_chars }} characters (≈ {{ u.baseline_tokens_est }} tokens)</dd>
+  <dt>Saved by the context pack</dt><dd><b>{{ (u.saving ~ ' %') if u.saving is not none else 'no measured runs yet' }}</b></dd></dl></div>
+  <div class="panel"><h2 style="margin-top:0">Run limits</h2>
+    <form method="post" action="/usage/limits">{{ csrf_field(csrf) }}
+    <table><tr><th>Tier</th><th>Model</th><th>Max turns ({{ bounds.turns[0] }}-{{ bounds.turns[1] }})</th><th>Time limit s ({{ bounds.timeout[0] }}-{{ bounds.timeout[1] }})</th></tr>
+    {% for t in ('0', '1', '2', '3') %}<tr><td>{{ t }}{{ ' (read-only)' if t == '0' }}{{ ' (draft)' if t == '3' }}</td>
+      <td><select name="model_{{ t }}" aria-label="Model for tier {{ t }}">{% for m in models %}<option value="{{ m }}" {{ 'selected' if tiers[t].model == m }}>{{ m }}</option>{% endfor %}</select></td>
+      <td><input type="text" name="turns_{{ t }}" value="{{ tiers[t].max_turns }}" inputmode="numeric" aria-label="Max turns tier {{ t }}"></td>
+      <td><input type="text" name="timeout_{{ t }}" value="{{ tiers[t].timeout }}" inputmode="numeric" aria-label="Time limit tier {{ t }}"></td></tr>{% endfor %}</table>
+    <button type="submit">Save limits</button> <span class="hint">An employee can override model, turns and time on its own page.</span></form></div>
+</div>
+<div class="two">
+<div><h2>By employee</h2><table><tr><th>Employee</th><th>Runs</th><th>Tokens</th><th>Saved</th></tr>{% for r in u.by_employee %}<tr><td>{{ r.name }}</td><td>{{ r.runs }}</td><td>{{ r.tokens }}</td><td>{{ (r.saving ~ ' %') if r.saving is not none else '-' }}</td></tr>{% else %}<tr><td colspan="4" class="muted">No runs yet.</td></tr>{% endfor %}</table></div>
+<div><h2>By team</h2><table><tr><th>Team</th><th>Runs</th><th>Tokens</th></tr>{% for r in u.by_team %}<tr><td>{{ r.name }}</td><td>{{ r.runs }}</td><td>{{ r.tokens }}</td></tr>{% else %}<tr><td colspan="3" class="muted">No team usage yet.</td></tr>{% endfor %}</table></div>
+<div><h2>By model</h2><table><tr><th>Model</th><th>Runs</th><th>Tokens</th></tr>{% for r in u.by_model %}<tr><td>{{ r.name }}</td><td>{{ r.runs }}</td><td>{{ r.tokens }}</td></tr>{% else %}<tr><td colspan="3" class="muted">-</td></tr>{% endfor %}</table></div>
+<div><h2>By day</h2><table><tr><th>Day</th><th>Runs</th><th>Tokens</th></tr>{% for r in u.by_day %}<tr><td>{{ r.day }}</td><td>{{ r.runs }}</td><td>{{ r.tokens }}</td></tr>{% else %}<tr><td colspan="3" class="muted">-</td></tr>{% endfor %}</table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="bar"><h1>Settings</h1><a class="btn secondary" href="/maintenance">Maintenance &amp; trash</a></div>
+<div class="two">
+  <div class="panel"><h2 style="margin-top:0">Background programs</h2>
+    <p>Task engine: <b>{{ 'running' if engine.running else 'stopped' }}</b>{% if engine.running and engine.mode == 'simulated' %} (simulated work){% endif %}</p>
+    <p>Watchdog: <b>{{ 'running' if watchdog.running else 'not running' }}</b></p>
+    {% if not watchdog.running %}<p class="hint">Without the watchdog, no Telegram or e-mail alerts are sent. Start it with: <code>python -m aicorp.watchdog</code></p>{% endif %}
+  </div>
+  <div class="panel"><h2 style="margin-top:0">Channels</h2>
+    <p><b>Telegram</b>: {{ 'set up' if status.telegram.configured else 'not set up' }}{% if status.telegram.configured %} (bot {{ status.telegram.token }}, chat {{ status.telegram.chat_id }}){% endif %}</p>
+    <form method="post" action="/settings/test/telegram" style="display:inline">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Send test message</button></form>
+    <p style="margin-top:14px"><b>E-mail</b>: {{ 'set up' if status.email.configured else 'not set up' }}{% if status.email.configured %} ({{ status.email.address }} → {{ status.email.to or status.email.address }}){% endif %}</p>
+    <form method="post" action="/settings/test/email" style="display:inline">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Send test e-mail</button></form>
+  </div>
+</div>
+
+<div class="panel"><h2 style="margin-top:0">Chat with the Advisor</h2>
+  <p class="hint">Only your own Telegram chat and your own e-mail address are accepted; every other sender is ignored and logged. The watchdog listens for messages ({% if watchdog.running %}running now{% else %}<b>not running</b>: start <code>python -m aicorp.watchdog</code>{% endif %}). Send <code>/help</code> to the bot. By e-mail, put <code>[AICorp]</code> in the subject. Questions are answered while the task engine is running.</p>
+  <table><tr><th>Channel</th><th>Last check</th><th>Last message</th><th>Problem</th></tr>
+  {% for c in ('telegram', 'email') %}<tr><td>{{ c }}</td><td class="muted">{{ chat[c].last_poll|ts if chat[c].last_poll else 'never' }}</td><td class="muted">{{ chat[c].last_inbound|ts if chat[c].last_inbound else '—' }}</td><td>{{ chat[c].last_error or '—' }}</td></tr>{% endfor %}</table>
+  <form method="post" action="/settings/chat/test-email" style="display:inline">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Test mailbox login (IMAP)</button></form>
+  <a class="btn secondary" href="/chat">Chat log</a>
+</div>
+
+<div class="panel"><h2 style="margin-top:0">Browser worker</h2>
+  <p>Playwright: <b>{{ 'installed' if browser.playwright else 'not installed' }}</b> · Chromium: <b>{{ 'found' if browser.chromium else 'not found (run: playwright install chromium)' }}</b> · Window on this computer: <b>{{ 'possible' if browser.display else 'no display - hand-offs cannot show a window' }}</b></p>
+  <p class="hint">An employee with the <code>browser</code> tool follows a JSON plan in the task. It never solves CAPTCHAs or logs in for you: it leaves a window open and waits. Rules and site notes: <code>company/policies/browser-sites.md</code>.</p>
+  {% if browser.open %}<table><tr><th>Task</th><th>State</th><th>Window</th><th>Open since</th></tr>
+  {% for s in browser.open %}<tr><td><a href="/tasks/{{ s.task_id }}">{{ s.task_id }}</a></td><td>{{ s.reason }}</td><td>{{ 'visible' if s.headed else 'background' }}</td><td class="muted">{{ s.since|ts }}</td></tr>{% endfor %}</table>
+  <form method="post" action="/settings/browser/close">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Close all open browser windows</button></form>
+  {% else %}<p class="muted">No browser windows are open.</p>{% endif %}
+</div>
+
+<h2>Which alerts go where</h2>
+<form method="post" action="/settings/routing" class="panel">
+  {{ csrf_field(csrf) }}
+  <table><tr><th>Severity</th><th>Dashboard</th><th>Telegram</th><th>E-mail</th></tr>
+  {% for sev in severities %}<tr><td><span class="badge">{{ sev }}</span></td><td>always</td>
+    <td><input type="checkbox" name="r_{{ sev }}_telegram" {{ 'checked' if 'telegram' in routing[sev] }}></td>
+    <td><input type="checkbox" name="r_{{ sev }}_email" {{ 'checked' if 'email' in routing[sev] }}></td></tr>{% endfor %}
+  </table>
+  <div class="actions"><button type="submit">Save routing</button></div>
+</form>
+
+<h2>Limits</h2>
+<form method="post" action="/settings/general" class="panel">
+  {{ csrf_field(csrf) }}
+  <label for="rate_per_hour" style="margin-top:0">Most messages per hour on each channel</label><input id="rate_per_hour" type="text" name="rate_per_hour" value="{{ rate }}">
+  <label for="engine_down_after">Call the engine dead after this many seconds without a heartbeat</label><input id="engine_down_after" type="text" name="engine_down_after" value="{{ down_after }}">
+  <label for="dashboard_url">Address used in links inside messages</label><input id="dashboard_url" type="text" name="dashboard_url" value="{{ url }}">
+  <div class="actions"><button type="submit">Save</button></div>
+</form>
+
+<h2>Credentials</h2>
+<form method="post" action="/settings/secret" class="panel" autocomplete="off">
+  {{ csrf_field(csrf) }}
+  <p class="secret-note">Stored only in <code>config/secrets.env</code> (private file). Existing values are never shown. Leave a field empty to keep what is there.</p>
+  <label for="TELEGRAM_BOT_TOKEN">Telegram bot token</label><input id="TELEGRAM_BOT_TOKEN" type="password" name="TELEGRAM_BOT_TOKEN" autocomplete="new-password">
+  <label for="TELEGRAM_CHAT_ID">Telegram chat ID</label><input id="TELEGRAM_CHAT_ID" type="text" name="TELEGRAM_CHAT_ID" autocomplete="off">
+  <label for="GMAIL_ADDRESS">Gmail address</label><input id="GMAIL_ADDRESS" type="text" name="GMAIL_ADDRESS" autocomplete="off">
+  <label for="GMAIL_APP_PASSWORD">Gmail app password</label><input id="GMAIL_APP_PASSWORD" type="password" name="GMAIL_APP_PASSWORD" autocomplete="new-password">
+  <label for="ALERT_EMAIL_TO">Send alerts to</label><input id="ALERT_EMAIL_TO" type="text" name="ALERT_EMAIL_TO" autocomplete="off">
+  <div class="actions"><button type="submit">Save credentials</button></div>
+</form>
+{% endblock %}

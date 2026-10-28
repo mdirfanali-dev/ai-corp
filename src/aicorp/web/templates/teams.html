@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Teams{% endblock %}
+{% block content %}
+<div class="bar"><h1>Teams</h1><a class="btn" href="/teams/new">+ New team</a></div>
+<table>
+  <tr><th>Team</th><th>Head</th><th>Members</th></tr>
+  {% for t in rows %}
+  <tr><td><a href="/teams/{{ t.team_id }}">{{ t.name }}</a><div class="hint">{{ t.description }}</div></td>
+      <td>{{ t.head_name or '—' }}</td><td>{{ t.members|map(attribute='name')|join(', ') or '—' }}</td></tr>
+  {% else %}<tr><td colspan="3" class="muted">No teams yet. Create your first team.</td></tr>{% endfor %}
+</table>
+{% endblock %}

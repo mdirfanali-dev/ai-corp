@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<div class="bar"><h1>Projects</h1><a class="btn" href="/projects/new">+ New project</a></div>
+<table><tr><th>Project</th><th>Status</th><th>Health</th><th>Open</th><th>Blocked</th><th>Overdue</th><th>Idle</th><th>Owner</th></tr>
+{% for p in rows %}<tr><td><a href="/projects/{{ p.project_id }}">{{ p.name }}</a><div class="hint">{{ p.goal }}</div></td><td><span class="badge">{{ p.status }}</span></td>
+  <td><span class="badge {{ {'ok': 's-done', 'attention': 's-blocked', 'stalled': 's-failed'}[p.health.label] }}">{{ p.health.label }}</span></td>
+  <td>{{ p.health.open }}</td><td>{{ p.health.blocked }}</td><td>{{ p.health.overdue }}</td><td>{{ p.health.idle_days|round(0)|int }} d</td><td>{{ p.owner_name or '—' }}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No projects yet.</td></tr>{% endfor %}</table>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, who %}
+{% block title %}{{ task.title }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ task.title }} <span class="badge s-{{ task.status }}">{{ task.status|replace('_',' ') }}</span>
+  {% if task.kind == 'delegation' %}<span class="badge">delegated</span>{% endif %}</h1><a href="/tasks">← All tasks</a></div>
+
+{% if task.status in ('running', 'assigned', 'blocked') %}<p><a class="btn secondary" href="/tasks/{{ task.task_id }}/takeover">Take over this task</a></p>{% endif %}
+{% if task.block %}
+<div class="box"><b>Blocked: {{ task.block.reason|replace('_',' ') }}</b> since {{ task.block.since|ts }}<br>{{ task.block.detail or '' }}
+  <form method="post" action="/tasks/{{ task.task_id }}/resolve" class="actions">{{ csrf_field(csrf) }}
+    <input type="text" name="note" placeholder="What did you do? (optional)" style="max-width:360px"><button type="submit">I fixed it — resume</button></form></div>
+{% endif %}
+{% if task.approval %}
+<div class="box"><b>Waiting for your approval</b> (tier {{ task.approval.tier }}) — {{ task.result_summary or '' }}
+  <form method="post" action="/tasks/{{ task.task_id }}/decide" class="actions">{{ csrf_field(csrf) }}
+    <input type="text" name="note" placeholder="Note (optional)" style="max-width:320px">
+    <button name="decision" value="approved" type="submit">Approve</button>
+    <button name="decision" value="revise" class="secondary" type="submit">Ask for changes</button>
+    <button name="decision" value="rejected" class="danger" type="submit">Reject</button></form></div>
+{% endif %}
+
+{% if challenge %}
+<div class="box" style="border-color:var(--accent)"><b>The Advisor's challenge</b> <span class="muted">— automatic checks, they find gaps, not truth</span>
+  <ul>{% for c in challenge %}<li><span class="badge {{ 's-blocked' if c.severity == 'warn' else '' }}">{{ c.severity }}</span> {{ c.text }}</li>{% endfor %}</ul></div>
+{% endif %}
+<div class="two">
+  <div class="panel"><dl class="kv">
+    <dt>Task ID</dt><dd>{{ task.task_id }}</dd>
+    <dt>Owner</dt><dd>{% if task.owner_emp_id %}<a href="/employees/{{ task.owner_emp_id }}">{{ task.owner_name }}</a>{% else %}—{% endif %}</dd>
+    <dt>Priority / tier</dt><dd>{{ task.priority }} (1 = urgent) · tier {{ task.risk_tier }}</dd>
+    <dt>Due</dt><dd>{{ task.due_at|ts if task.due_at else '—' }}</dd>
+    <dt>Attempts</dt><dd>{{ task.attempts }}{% if task.not_before %} · retry after {{ task.not_before|ts }}{% endif %}</dd>
+    <dt>Depth</dt><dd>{{ task.depth }}{% if parent %} · sub-task of <a href="/tasks/{{ parent.task_id }}">{{ parent.title }}</a>{% endif %}</dd>
+    <dt>Checkpoint</dt><dd>{{ task.checkpoint or '—' }}</dd>
+    <dt>Result</dt><dd>{{ task.result_summary or '—' }}</dd>
+  </dl>
+  {% if task.description %}<p>{{ task.description }}</p>{% endif %}</div>
+  <div class="panel">
+    <b>Waits for</b>
+    <ul>{% for d in task.depends_on %}<li><a href="/tasks/{{ d.task_id }}">{{ d.title }}</a> <span class="badge s-{{ d.status }}">{{ d.status|replace('_',' ') }}</span></li>{% else %}<li class="muted">nothing</li>{% endfor %}</ul>
+    <b>Blocks</b>
+    <ul>{% for d in task.dependents %}<li><a href="/tasks/{{ d.task_id }}">{{ d.title }}</a> <span class="badge s-{{ d.status }}">{{ d.status|replace('_',' ') }}</span></li>{% else %}<li class="muted">nothing</li>{% endfor %}</ul>
+    <b>Sub-tasks</b>
+    <ul>{% for d in task.children %}<li><a href="/tasks/{{ d.task_id }}">{{ d.title }}</a> <span class="badge s-{{ d.status }}">{{ d.status|replace('_',' ') }}</span></li>{% else %}<li class="muted">none</li>{% endfor %}</ul>
+  </div>
+</div>
+
+<div class="actions">
+  {% if task.status in ['created', 'assigned'] %}
+  <form method="post" action="/tasks/{{ task.task_id }}/assign" class="actions" style="margin:0">{{ csrf_field(csrf) }}
+    <select name="owner" style="width:auto">{% for p in people %}<option value="{{ p.emp_id }}" {{ 'selected' if p.emp_id == task.owner_emp_id }}>{{ p.name }}</option>{% endfor %}</select>
+    <button class="secondary" type="submit">{{ 'Reassign' if task.owner_emp_id else 'Assign' }}</button></form>
+  {% endif %}
+  {% if task.status == 'failed' %}<form method="post" action="/tasks/{{ task.task_id }}/retry">{{ csrf_field(csrf) }}<button type="submit">Retry</button></form>{% endif %}
+  {% if task.status not in ['done', 'rejected'] %}
+  <form method="post" action="/tasks/{{ task.task_id }}/cancel" onsubmit="return confirm('Cancel this task?')">{{ csrf_field(csrf) }}<button class="danger" type="submit">Cancel task</button></form>
+  {% endif %}
+</div>
+
+<h2>Timeline</h2>
+<table><tr><th>Time</th><th>Who</th><th>Event</th></tr>
+  {% for e in history %}<tr><td class="muted" style="white-space:nowrap">{{ e.ts|ts }}</td><td>{{ who(e) }}</td><td><span class="badge">{{ e.type }}</span> {{ e.summary }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

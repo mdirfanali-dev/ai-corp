@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<div class="bar"><h1>Roles</h1><a class="btn" href="/roles/new">+ New role</a></div>
+<table>
+  <tr><th>Role</th><th>Description</th><th>Can</th><th>Held by</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td><a href="/roles/{{ r.role_id }}">{{ r.name }}</a>{% if r.name in system_roles %} <span class="badge system">built-in</span>{% endif %}</td>
+    <td>{{ r.description }}</td>
+    <td>{% set caps = [] %}{% if r.capabilities.get('execute') %}{% set _ = caps.append('execute') %}{% endif %}{% if r.capabilities.get('assign') %}{% set _ = caps.append('assign') %}{% endif %}{{ caps|join(', ') or 'read-only' }}</td>
+    <td>{{ r.members|map(attribute='name')|join(', ') or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

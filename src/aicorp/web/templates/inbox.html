@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Inbox{% endblock %}
+{% block content %}
+<div class="bar"><h1>Inbox</h1><a href="/attention">Attention Center →</a></div>
+<form method="get" class="filters">
+  <div style="grid-column: span 2"><label for="q">Search</label><input id="q" type="search" name="q" value="{{ f.q }}" placeholder="words in any notification"></div>
+  <div><label for="category">Category</label><select id="category" name="category"><option value="">All</option>{% for c in categories %}<option value="{{ c }}" {{ 'selected' if f.category == c }}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label for="severity">Severity</label><select id="severity" name="severity"><option value="">All</option>{% for c in severities %}<option value="{{ c }}" {{ 'selected' if f.severity == c }}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label for="state">Show</label><select id="state" name="state">{% for c in states %}<option value="{{ c }}" {{ 'selected' if f.state == c }}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label for="since">From (UTC)</label><input id="since" type="date" name="since" value="{{ f.since }}"></div>
+  <div><label for="until">To (UTC)</label><input id="until" type="date" name="until" value="{{ f.until }}"></div>
+  <div><button type="submit" class="secondary">Filter</button></div>
+</form>
+<form method="post" action="/inbox/action">
+  {{ csrf_field(csrf) }}
+  {% for k, v in f.items() %}<input type="hidden" name="f_{{ k }}" value="{{ v }}">{% endfor %}
+  <label class="inline"><input type="checkbox" id="select-all"> Select all on this page</label>
+  {% for n in rows %}
+  <div class="item sev-{{ n.severity }} {{ 'unread' if not n.read_at and not n.resolved_at }} {{ 'resolved' if n.resolved_at }}">
+    <div class="head">
+      <input type="checkbox" name="ids" value="{{ n.id }}" aria-label="select">
+      {% if n.pinned %}<span class="pill">pinned</span>{% endif %}
+      <a class="title" href="/inbox/{{ n.id }}">{{ n.title }}</a>
+      <span class="badge">{{ n.category }}</span>
+      {% if n.resolved_at %}<span class="pill">resolved</span>{% endif %}{% if n.snoozed %}<span class="pill">snoozed</span>{% endif %}
+      <span class="muted">{{ n.created_at|ts }}{% if n.repeat_count > 1 %} · seen {{ n.repeat_count }}×{% endif %}</span>
+    </div>
+    <div>{{ n.detail }}</div>
+    <div style="margin-top:4px">{% for d in n.deliveries %}<span class="chan {{ d.status }}" title="{{ d.error or '' }}">{{ d.channel }}: {{ d.status }}</span> {% endfor %}</div>
+  </div>
+  {% else %}<div class="panel muted">No notifications match.</div>{% endfor %}
+  <div class="bulk">
+    <button type="submit" name="action" value="read">Mark selected read</button>
+    <button type="submit" name="action" value="unread" class="secondary">Mark unread</button>
+    <button type="submit" name="action" value="pin" class="secondary">Pin</button>
+    <button type="submit" name="action" value="unpin" class="secondary">Unpin</button>
+    <select name="snooze_for" aria-label="snooze for"><option value="1h">1 hour</option><option value="4h">4 hours</option><option value="1d">1 day</option><option value="3d">3 days</option></select>
+    <button type="submit" name="action" value="snooze" class="secondary">Snooze</button>
+    <button type="submit" name="action" value="read_all" class="secondary">Mark all matching as read</button>
+  </div>
+</form>
+<div class="actions">
+  {% if page > 1 %}<a class="btn secondary" href="{{ newer_url }}">← Newer</a>{% endif %}
+  {% if more %}<a class="btn secondary" href="{{ older_url }}">Older →</a>{% endif %}
+</div>
+<script src="/static/inbox.js" defer></script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, errors_box %}
+{% block title %}{{ project.name if project else 'New project' }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ project.name if project else 'New project' }}</h1><a href="/projects">← All projects</a></div>
+{{ errors_box(errors) }}
+{% if project %}<div class="grid" style="margin-bottom:14px">
+  <div class="stat"><span class="muted">Health</span><b>{{ health.label }}</b></div><div class="stat"><span class="muted">Open tasks</span><b>{{ health.open }}</b></div>
+  <div class="stat"><span class="muted">Blocked / failed</span><b>{{ health.blocked }}</b></div><div class="stat"><span class="muted">Overdue</span><b>{{ health.overdue }}</b></div>
+  <div class="stat"><span class="muted">Idle (days)</span><b>{{ health.idle_days|round(0)|int }}</b></div></div>{% endif %}
+<form method="post" action="{{ '/projects/' ~ project.project_id if project else '/projects' }}" class="panel">{{ csrf_field(csrf) }}
+  <label for="name" style="margin-top:0">Name</label><input id="name" type="text" name="name" value="{{ f.name }}" maxlength="60" required>
+  <label for="goal">Goal</label><input id="goal" type="text" name="goal" value="{{ f.goal }}">
+  <div class="two"><div><label for="status">Status</label><select id="status" name="status">{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if f.status == s }}>{{ s }}</option>{% endfor %}</select>
+    <label for="owner_emp_id">Owner</label><select id="owner_emp_id" name="owner_emp_id"><option value="">— nobody —</option>{% for p in people %}<option value="{{ p.emp_id }}" {{ 'selected' if f.owner_emp_id == p.emp_id }}>{{ p.name }}</option>{% endfor %}</select></div>
+  <div><label for="next_review_at">Next review</label><input id="next_review_at" type="datetime-local" name="next_review_at" value="{{ f.next_review_at }}">
+    <label for="notes">Notes</label><input id="notes" type="text" name="notes" value="{{ f.notes }}"></div></div>
+  <div class="actions"><button type="submit">{{ 'Save changes' if project else 'Create project' }}</button></div></form>
+{% if project %}
+<h2>Tasks</h2><table><tr><th>Task</th><th>Status</th><th>Owner</th><th>Due</th></tr>
+{% for t in project_tasks %}<tr><td><a href="/tasks/{{ t.task_id }}">{{ t.title }}</a></td><td><span class="badge s-{{ t.status }}">{{ t.status|replace('_',' ') }}</span></td><td>{{ t.owner_name or '—' }}</td><td class="muted">{{ t.due_at|ts if t.due_at else '—' }}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No tasks yet. Choose this project when creating a task, or create tasks from a meeting's action items.</td></tr>{% endfor %}</table>
+<h2>Meetings</h2><table><tr><th>When</th><th>Meeting</th><th>Status</th></tr>
+{% for m in meetings %}<tr><td class="muted">{{ m.scheduled_at|ts if m.scheduled_at else '—' }}</td><td><a href="/meetings/{{ m.meeting_id }}">{{ m.title }}</a></td><td><span class="badge">{{ m.status }}</span></td></tr>
+{% else %}<tr><td colspan="3" class="muted">No meetings.</td></tr>{% endfor %}</table>
+<h2>Decisions</h2><table><tr><th>Decision</th><th>Follow up by</th><th>Status</th><th></th></tr>
+{% for d in decisions %}<tr><td>{{ d.title }}<div class="hint">{{ d.text }}</div></td><td class="muted">{{ d.follow_up_by|ts if d.follow_up_by else '—' }}</td><td><span class="badge">{{ d.status }}</span></td>
+  <td>{% if d.status == 'open' %}<form method="post" action="/decisions/{{ d.decision_id }}/close" class="actions" style="margin:0">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/projects/{{ project.project_id }}"><button class="secondary" name="status" value="followed_up" type="submit">Followed up</button><button class="secondary" name="status" value="dropped" type="submit">Drop</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No decisions recorded.</td></tr>{% endfor %}</table>
+<form method="post" action="/projects/{{ project.project_id }}/delete" onsubmit="return confirm('Delete this project? Its tasks and meetings are kept.')" style="margin-top:14px">{{ csrf_field(csrf) }}<button class="danger" type="submit">Delete project</button></form>
+{% endif %}
+{% endblock %}

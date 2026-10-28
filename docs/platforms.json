@@ -1,0 +1,6 @@
+{
+  "Linux": "untested",
+  "Windows + WSL2": "tested",
+  "macOS": "untested",
+  "Windows (native)": "unsupported"
+}

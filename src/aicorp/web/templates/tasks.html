@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
+<div class="bar"><h1>Tasks</h1>
+  <div class="actions" style="margin:0">
+    {% if kill is none %}<form method="post" action="/killswitch/engage" onsubmit="return confirm('Stop ALL workers now?')">{{ csrf_field(csrf) }}
+      <input type="hidden" name="reason" value="stopped from the dashboard"><button class="danger" type="submit">Kill switch</button></form>{% endif %}
+    <a class="btn" href="/tasks/new">+ New task</a></div></div>
+<form method="get" class="filters">
+  <div><label for="q">Title</label><input id="q" type="search" name="q" value="{{ q }}"></div>
+  <div><label for="status">Status</label><select id="status" name="status"><option value="">All</option>
+    {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|replace('_',' ') }}</option>{% endfor %}</select></div>
+  <div><label for="owner">Owner</label><select id="owner" name="owner"><option value="">Anyone</option>
+    {% for p in people %}<option value="{{ p.emp_id }}" {{ 'selected' if owner == p.emp_id }}>{{ p.name }}</option>{% endfor %}</select></div>
+  <div><button class="secondary" type="submit">Filter</button></div>
+</form>
+<table>
+  <tr><th>Task</th><th>Status</th><th>Owner</th><th>Pri</th><th>Tier</th><th>Waiting for</th><th>Updated</th></tr>
+  {% for t in rows %}
+  <tr>
+    <td><a href="/tasks/{{ t.task_id }}">{{ t.title }}</a>{% if t.kind == 'delegation' %} <span class="badge">delegated</span>{% endif %}<div class="hint">{{ t.task_id }}</div></td>
+    <td><span class="badge s-{{ t.status }}">{{ t.status|replace('_',' ') }}</span></td>
+    <td>{{ t.owner_name or '—' }}</td><td>{{ t.priority }}</td><td>{{ t.risk_tier }}</td>
+    <td>{% if t.open_deps %}{{ t.open_deps }} task(s){% else %}—{% endif %}</td>
+    <td class="muted">{{ t.updated_at|ts }}</td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="muted">No tasks yet.</td></tr>{% endfor %}
+</table>
+<p class="hint">Priority 1 = most urgent. Tier: 0 read-only · 1 draft · 2 local run · 3 external (needs your approval) · 4 critical (never automatic).</p>
+{% endblock %}

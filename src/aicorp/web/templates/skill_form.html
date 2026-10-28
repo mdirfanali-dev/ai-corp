@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Add a skill{% endblock %}
+{% block content %}
+<div class="bar"><h1>Add or replace a skill</h1><a href="/skills">← Skills</a></div>
+{% if errors %}<div class="flash err"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" action="/skills" class="panel">{{ csrf_field(csrf) }}
+  <label for="name">Name <span class="muted">(lowercase, digits, - _ .)</span></label><input id="name" name="name" value="{{ f.name }}" required>
+  <label for="description">What it is for</label><input id="description" name="description" value="{{ f.description }}">
+  <label for="keywords">Keywords <span class="muted">(the skill is loaded only when the task contains one of these or the name)</span></label><input id="keywords" name="keywords" value="{{ f.keywords }}">
+  <label for="employees">Only for these employees <span class="muted">(names; empty = anyone who lists it)</span></label><input id="employees" name="employees" value="{{ f.employees }}">
+  <label for="source">Source <span class="muted">("own" = you wrote it; anything else is treated as outside material and must be vetted)</span></label><input id="source" name="source" value="{{ f.source }}">
+  <label for="license">Licence</label><input id="license" name="license" value="{{ f.license }}">
+  <label for="version">Version</label><input id="version" name="version" value="{{ f.version }}">
+  <label for="body">Content (Markdown, short: every character costs tokens)</label><textarea id="body" name="body" rows="14" required>{{ f.body }}</textarea>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}

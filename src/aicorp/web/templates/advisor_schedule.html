@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Advisor schedule{% endblock %}
+{% block content %}
+<div class="bar"><h1>Advisor schedule</h1><a href="/advisor">← Desk</a></div>
+<div class="panel"><form method="post" action="/advisor/monitor" class="actions" style="margin:0">{{ csrf_field(csrf) }}<input type="hidden" name="next" value="/advisor">
+  <span>Monitor is <b>{{ 'ON' if monitor else 'OFF' }}</b>. While it is on and this computer is awake, the Advisor runs the jobs below.</span>
+  <input type="hidden" name="state" value="{{ 'off' if monitor else 'on' }}"><button class="secondary" type="submit">Turn {{ 'off' if monitor else 'on' }}</button></form>
+  <p class="hint">Last check: {{ last_tick[:19]|replace('T', ' ') ~ ' UTC' if last_tick else 'never' }}. If the computer was off, missed jobs run once when it wakes up and a "While you were away" report is written. {% if not engine.running and not watchdog.running %}<b>Neither the task engine nor the watchdog is running, so nothing is being checked now.</b>{% endif %}</p></div>
+<h2>Jobs</h2>
+<table><tr><th>Job</th><th>Schedule</th><th>Next run (UTC)</th><th>Last run</th><th></th></tr>
+{% for j in jobs %}<tr>
+  <td><b>{{ j.job }}</b><div class="hint">{{ j.description }}</div></td>
+  <td><form method="post" action="/advisor/job/{{ j.job }}" class="actions" style="margin:0">{{ csrf_field(csrf) }}
+    <input type="text" name="spec" value="{{ j.spec }}" style="width:11em"><label class="inline"><input type="checkbox" name="enabled" {{ 'checked' if j.enabled }}> on</label><button class="secondary" type="submit">Save</button></form></td>
+  <td class="muted">{{ (j.next_run or '')[:16]|replace('T', ' ') }}</td>
+  <td>{% if j.last %}<span class="badge {{ 's-done' if j.last.status == 'ok' else 's-failed' }}">{{ j.last.status }}</span>{% if j.last.catch_up %} <span class="pill">catch-up</span>{% endif %}<div class="hint">{{ j.last.started_at|ts }} — {{ j.last.detail }}</div>{% else %}<span class="muted">never</span>{% endif %}</td>
+  <td><form method="post" action="/advisor/run/{{ j.job }}">{{ csrf_field(csrf) }}<button class="secondary" type="submit">Run now</button></form></td></tr>{% endfor %}
+</table>
+<p class="hint">Schedules: <code>every 15m</code>, <code>every 2h</code>, <code>daily 08:00</code>, <code>weekly mon 09:00</code> (your computer's local time).</p>
+<h2>Reminder behaviour</h2>
+<form method="post" action="/advisor/settings" class="panel">{{ csrf_field(csrf) }}
+  <div class="two"><div>
+    <label for="quiet_start" style="margin-top:0">Quiet hours start (no reminders)</label><input id="quiet_start" type="text" name="quiet_start" value="{{ quiet.start }}">
+    <label for="quiet_end">Quiet hours end</label><input id="quiet_end" type="text" name="quiet_end" value="{{ quiet.end }}">
+    <label for="nag_daily_cap">Most reminder messages per day</label><input id="nag_daily_cap" type="text" name="nag_daily_cap" value="{{ cap }}"></div><div>
+    <label for="stale_days" style="margin-top:0">Call a task stale after (days without change)</label><input id="stale_days" type="text" name="stale_days" value="{{ stale }}">
+    <label for="project_stale_days">Call a project stalled after (days)</label><input id="project_stale_days" type="text" name="project_stale_days" value="{{ pstale }}">
+    <label for="away_threshold_minutes">"While you were away" after a gap longer than (minutes)</label><input id="away_threshold_minutes" type="text" name="away_threshold_minutes" value="{{ away }}"></div></div>
+  <label class="inline" style="margin-top:12px"><input type="checkbox" name="ai_summary" {{ 'checked' if ai }}> Also ask Claude (read-only, uses your plan) for a short written summary of the daily briefing</label>
+  <div class="actions"><button type="submit">Save</button></div></form>
+<h2>Recent runs</h2>
+<table><tr><th>When</th><th>Job</th><th>Status</th><th>Result</th></tr>
+{% for r in runs %}<tr><td class="muted">{{ r.started_at|ts }}</td><td>{{ r.job }}{% if r.catch_up %} <span class="pill">catch-up</span>{% endif %}</td><td><span class="badge {{ 's-done' if r.status == 'ok' else 's-failed' }}">{{ r.status }}</span></td><td>{{ r.detail }}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No runs yet.</td></tr>{% endfor %}</table>
+{% endblock %}

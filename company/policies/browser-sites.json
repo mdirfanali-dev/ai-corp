@@ -1,0 +1,15 @@
+{
+  "allowed_domains": [],
+  "sites": {
+    "example-ai": {
+      "enabled": false,
+      "url": "https://example.com/chat",
+      "input": "textarea",
+      "submit": "button[type=submit]",
+      "response": ".answer",
+      "logged_in": "textarea",
+      "wait_seconds": 60,
+      "notes": "Example only. Fill in real selectors, check the site's terms, then set enabled to true."
+    }
+  }
+}

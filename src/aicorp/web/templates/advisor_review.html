@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Review{% endblock %}
+{% block content %}
+<div class="bar"><h1>Review, one by one</h1><a href="/advisor">← Desk</a></div>
+{% if not item %}
+<div class="panel"><b>{{ 'All reviewed.' if total == 0 or index >= total else '' }}</b> <span class="muted">Nothing left that you have not acknowledged or snoozed.</span>
+  {% if total and index >= total %}<p><a class="btn secondary" href="/advisor/review?i=0">Start again</a></p>{% endif %}</div>
+{% else %}
+<p class="muted">Item {{ index + 1 }} of {{ total }}</p>
+<div class="item sev-{{ item.severity }}">
+  <div class="head"><span class="title">{{ item.title }}</span><span class="badge">{{ item.category }}</span>
+    {% if item.project_name %}<span class="pill">{{ item.project_name }}</span>{% endif %}
+    {% if item.overdue %}<span class="badge s-failed">overdue</span>{% endif %}{% if item.waiting_on_me %}<span class="badge s-blocked">needs you</span>{% endif %}{% if item.forgotten %}<span class="badge s-failed">forgotten</span>{% endif %}</div>
+  <p>{{ item.detail }}</p>
+  <p class="muted">{{ item.age_label|capitalize }} {{ item.age_text }}{% if item.escalation_level %} · reminded {{ item.escalation_level }} time(s){% endif %}</p>
+  <div class="actions">
+    <form method="post" action="/inbox/action">{{ csrf_field(csrf) }}<input type="hidden" name="ids" value="{{ item.id }}"><input type="hidden" name="next" value="/advisor/review?i={{ index }}"><button name="action" value="ack" type="submit">I have seen it — stop reminding me</button></form>
+    <form method="post" action="/inbox/action">{{ csrf_field(csrf) }}<input type="hidden" name="ids" value="{{ item.id }}"><input type="hidden" name="snooze_for" value="1d"><input type="hidden" name="next" value="/advisor/review?i={{ index }}"><button class="secondary" name="action" value="snooze" type="submit">Snooze 1 day</button></form>
+    {% if item.link %}<a class="btn secondary" href="{{ item.link }}">Open it</a>{% endif %}
+    <a class="btn secondary" href="/advisor/review?i={{ next_i }}">Skip →</a>
+    {% if index > 0 %}<a class="btn secondary" href="/advisor/review?i={{ prev_i }}">← Back</a>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, errors_box %}
+{% block title %}{{ role.name if role else 'New role' }}{% endblock %}
+{% block content %}
+<div class="bar"><h1>{{ role.name if role else 'New role' }}</h1><a href="/roles">← All roles</a></div>
+{{ errors_box(errors) }}
+<form method="post" action="{{ '/roles/' ~ role.role_id if role else '/roles' }}" class="panel">
+  {{ csrf_field(csrf) }}
+  <label for="name" style="margin-top:0">Role name</label>
+  <input id="name" type="text" name="name" value="{{ f.name }}" maxlength="60" required>
+  <label for="description">Description</label>
+  <input id="description" type="text" name="description" value="{{ f.description }}">
+  <label for="skills">Skills <span class="muted">(comma separated)</span></label>
+  <input id="skills" type="text" name="skills" value="{{ f.skills }}">
+  <label for="tools">Allowed tools <span class="muted">(comma separated)</span></label>
+  <input id="tools" type="text" name="tools" value="{{ f.tools }}">
+  <label>Permissions</label>
+  <label class="inline"><input type="checkbox" name="execute" {{ 'checked' if f.execute }}> execute work</label>
+  <label class="inline"><input type="checkbox" name="assign" {{ 'checked' if f.assign }}> assign tasks</label>
+  <div class="actions"><button type="submit">{{ 'Save changes' if role else 'Create role' }}</button></div>
+</form>
+{% if role %}
+<h2>Held by</h2>
+<p>{% for m in role.members %}<a href="/employees/{{ m.emp_id }}">{{ m.name }}</a>{{ ', ' if not loop.last }}{% else %}<span class="muted">Nobody.</span>{% endfor %}</p>
+{% if role.name not in system_roles %}
+<form method="post" action="/roles/{{ role.role_id }}/delete" onsubmit="return confirm('Delete this role?')">{{ csrf_field(csrf) }}<button class="danger" type="submit">Delete role</button></form>
+{% else %}<p class="muted">Built-in role: cannot be renamed or deleted.</p>{% endif %}
+{% endif %}
+{% endblock %}
