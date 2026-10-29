@@ -92,7 +92,7 @@ def test_healthy_machine_has_no_problems(tmp_path):
                                   env={"USER": "alice", "HOME": f"{H}/alice", "AICORP_WORKER_USER": "wk"},
                                   which={"claude": "/usr/bin/claude"},
                                   commands={("id", "-u", "wk"): (0, "1001"), ("sudo", "-n", "-u", "wk", "true"): (0, ""),
-                                            ("sudo", "-n", "-u", "wk", "-H", "claude", "--version"): (0, "2.1.3 (Claude Code)"),
+                                            ("sudo", "-n", "-u", "wk", "-H", f"{H}/wk/.local/bin/claude", "--version"): (0, "2.1.3 (Claude Code)"),
                                             ("getent", "passwd", "wk"): (0, f"wk:x:1001:1001::{H}/wk:/bin/bash"),
                                             ("sudo", "-n", "-u", "wk", "test", "-s", f"{H}/wk/.claude/.credentials.json"): (0, "")}))
     assert doctor.summary(res)["ok"] and all(r.status == OK for r in res), [(r.id, r.status, r.detail) for r in res if r.status != OK]
@@ -132,8 +132,11 @@ def test_missing_venv_package_and_chromium_offer_safe_fixes(tmp_path):
 def test_worker_user_states(tmp_path):
     none = by_id(doctor.run_checks(probe(tmp_path)))["worker"]
     assert none.status == WARN and none.needs_admin
-    exists = by_id(doctor.run_checks(probe(tmp_path, commands={("id", "-u", "aicorp-worker"): (0, "1")})))["worker"]
-    assert exists.status == WARN and not exists.needs_admin and "AICORP_WORKER_USER" in exists.next_step
+    cmds = {("id", "-u", "aicorp-worker"): (0, "1"), ("sudo", "-n", "-u", "aicorp-worker", "true"): (0, "")}
+    exists = by_id(doctor.run_checks(probe(tmp_path, commands=cmds)))["worker"]            # the standard worker is used without being configured
+    assert exists.status == OK and "found automatically" in exists.detail
+    nosudo_default = by_id(doctor.run_checks(probe(tmp_path, commands={("id", "-u", "aicorp-worker"): (0, "1")})))["worker"]
+    assert nosudo_default.status == FAIL and "sudo" in nosudo_default.detail
     env = {"AICORP_WORKER_USER": "wk"}
     gone = by_id(doctor.run_checks(probe(tmp_path, env=env)))["worker"]
     assert gone.status == FAIL and "does not exist" in gone.detail
@@ -148,12 +151,12 @@ def test_claude_states(tmp_path):
     assert missing.status == WARN and missing.needs_admin
     base = {"AICORP_WORKER_USER": "wk"}
     cmds = {("id", "-u", "wk"): (0, "1"), ("sudo", "-n", "-u", "wk", "true"): (0, ""),
-            ("sudo", "-n", "-u", "wk", "-H", "claude", "--version"): (0, "2.1.3 (Claude Code)"),
+            ("sudo", "-n", "-u", "wk", "-H", f"{H}/wk/.local/bin/claude", "--version"): (0, "2.1.3 (Claude Code)"),
             ("getent", "passwd", "wk"): (0, f"wk:x:1:1::{H}/wk:/bin/sh")}
     nologin = by_id(doctor.run_checks(probe(tmp_path, env=base, commands=cmds)))["claude"]
     assert nologin.status == WARN and "no login" in nologin.detail and "2.1.3" in nologin.detail
     broken = by_id(doctor.run_checks(probe(tmp_path, env=base, commands={k: v for k, v in cmds.items() if "--version" not in k})))["claude"]
-    assert broken.status == FAIL
+    assert broken.status == WARN and "could not be started" in broken.detail            # only real Claude work needs it, so it does not block the start
 
 
 def test_secrets_file_states(tmp_path):

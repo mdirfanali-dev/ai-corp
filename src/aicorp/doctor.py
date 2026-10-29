@@ -206,17 +206,23 @@ def worker_user(p: Probe) -> str | None:
     return p.env.get("AICORP_WORKER_USER") or None
 
 
-def check_worker(p: Probe) -> Result:
+def effective_worker(p: Probe) -> tuple[str | None, bool]:
+    """The worker user the control panel will use: the configured one, else the standard one if it exists (second value: found, not configured)."""
     user = worker_user(p)
+    if user:
+        return user, False
+    if p.run(["id", "-u", DEFAULT_WORKER])[0] == 0:
+        return DEFAULT_WORKER, True
+    return None, False
+
+
+def check_worker(p: Probe) -> Result:
+    user, implied = effective_worker(p)
     title = "Worker user (runs the AI agents)"
     if not user:
         if p.env.get("AICORP_ALLOW_SAME_USER") == "1":
             return Result("worker", title, WARN, "agents would run as you (AICORP_ALLOW_SAME_USER=1)",
                           "This is weaker isolation. A separate worker user is recommended.")
-        rc, _ = p.run(["id", "-u", DEFAULT_WORKER])
-        if rc == 0:
-            return Result("worker", title, WARN, f"a user named {DEFAULT_WORKER} exists but AICORP_WORKER_USER is not set",
-                          f"Set AICORP_WORKER_USER={DEFAULT_WORKER} (the control panel does this for you when it starts the system).")
         return Result("worker", title, WARN, "no worker user configured (fine for the simulated engine, not for real Claude work)",
                       "Run scripts/setup_worker_user.sh with sudo, then set AICORP_WORKER_USER. This needs sudo, so you run it.",
                       needs_admin=True)
@@ -228,7 +234,7 @@ def check_worker(p: Probe) -> Result:
     if rc != 0:
         return Result("worker", title, FAIL, "the worker user exists but passwordless sudo to it is not set up",
                       "Re-run scripts/setup_worker_user.sh with sudo (it writes the sudoers rule). You run it.", needs_admin=True)
-    return Result("worker", title, OK, "worker user exists and can be used")
+    return Result("worker", title, OK, "worker user exists and can be used" + (" (found automatically; the control panel selects it for real Claude work)" if implied else ""))
 
 
 def _worker_home(p: Probe, user: str) -> str | None:
@@ -241,15 +247,18 @@ def _worker_home(p: Probe, user: str) -> str | None:
 
 def check_claude(p: Probe) -> Result:
     title = "Claude Code (installed and logged in)"
-    user = worker_user(p)
-    binary = p.env.get("AICORP_CLAUDE_BIN", "claude")
+    user, _ = effective_worker(p)
+    binary = p.env.get("AICORP_CLAUDE_BIN")
+    if not binary:
+        home = _worker_home(p, user) if user else None
+        binary = f"{home}/.local/bin/claude" if home else "claude"             # where Claude Code installs itself for that user
     cmd = ["sudo", "-n", "-u", user, "-H", binary, "--version"] if user else [binary, "--version"]
     if not user and not p.which(binary):
         return Result("claude", title, WARN, "Claude Code was not found",
                       "Install Claude Code for the worker user, then log in once with your Claude Pro account.", needs_admin=True)
     rc, out = p.run(cmd)
     if rc != 0:
-        return Result("claude", title, FAIL if user else WARN, "Claude Code could not be started" + (" as the worker user" if user else ""),
+        return Result("claude", title, WARN, "Claude Code could not be started" + (" as the worker user" if user else ""),
                       "Check AICORP_CLAUDE_BIN, and install Claude Code for the worker user.", needs_admin=True)
     version = re.search(r"\d+\.\d+\.\d+", out)
     where = _worker_home(p, user) if user else p.env.get("HOME")
