@@ -161,9 +161,10 @@ def test_claude_states(tmp_path):
 
 def test_secrets_file_states(tmp_path):
     path = str(tmp_path / "config" / "secrets.env")
-    assert by_id(doctor.run_checks(probe(tmp_path)))["secrets"].status == WARN
+    missing = by_id(doctor.run_checks(probe(tmp_path)))["secrets"]
+    assert missing.status == OK and "optional" in missing.detail and "Settings" in missing.next_step          # set up later in the dashboard
     open_ = by_id(doctor.run_checks(probe(tmp_path, files={path: 0o644})))["secrets"]
-    assert open_.status == FAIL and "chmod 600" in open_.next_step
+    assert open_.status == FAIL and "chmod 600" in open_.next_step and "other users" in open_.detail
     assert by_id(doctor.run_checks(probe(tmp_path, files={path: 0o600})))["secrets"].status == OK
 
 

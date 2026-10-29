@@ -277,16 +277,17 @@ def check_claude(p: Probe) -> Result:
 
 
 def check_secrets(p: Probe) -> Result:
+    """Telegram / Gmail credentials are typed in the dashboard (Settings) and stored privately in a file; this only checks that file's safety."""
     path = p.home / "config" / "secrets.env"
-    title = "Secrets file (Telegram / Gmail)"
+    title = "Alerts and chat (Telegram / Gmail)"
     if not p.exists(path):
-        return Result("secrets", title, WARN, "config/secrets.env does not exist (alerts and chat are off)",
-                      "Optional. Copy config/secrets.env.example to config/secrets.env and fill it in yourself.")
+        return Result("secrets", title, OK, "not set up yet (optional)",
+                      "You can add Telegram or Gmail later in the dashboard under Settings.")
     mode = p.mode(path)
     if mode is not None and not p.platform.startswith("win") and mode & 0o077:
-        return Result("secrets", title, FAIL, f"config/secrets.env is readable by others (mode {mode:o})",
-                      "Run: chmod 600 config/secrets.env")
-    return Result("secrets", title, OK, "config/secrets.env exists and is private")
+        return Result("secrets", title, FAIL, f"the saved credentials can be read by other users (mode {mode:o})",
+                      "Make the credentials file private: chmod 600 config/secrets.env (inside the AICorp folder).")
+    return Result("secrets", title, OK, "credentials are stored privately")
 
 
 def check_port(p: Probe) -> Result:

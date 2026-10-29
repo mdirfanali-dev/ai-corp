@@ -86,7 +86,7 @@ accounts, credentials — never started by an agent.
 
 ## Talking to the Advisor from your phone
 
-Set the Telegram bot and Gmail details in `config/secrets.env` (never in chat). Then message your bot:
+Enter the Telegram bot and Gmail details in the dashboard under **Settings** (never in chat); they are saved privately in `config/secrets.env`. Then message your bot:
 `/status` `/today` `/pending` `/blocked` `/projects` `/meetings` `/ack <id>` `/snooze <id> 2h` `/report` `/monitor on|off` `/stop`.
 Anything else is a question answered by the Advisor while the engine runs. By e-mail put `[AICorp]` in the subject. Approvals,
 permissions, secrets, deletes and releasing the kill switch are **dashboard only**.

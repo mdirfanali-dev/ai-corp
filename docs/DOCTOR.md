@@ -23,7 +23,7 @@ The exit code is `0` when nothing is a problem (warnings are allowed) and `1` ot
 | Chromium | Playwright's Chromium exists (only the browser worker needs it) | one-click fix: `python -m playwright install chromium` |
 | Worker user | the low-privilege user that runs the AI agents exists and passwordless `sudo -u` to it works | run `scripts/setup_worker_user.sh` with sudo |
 | Claude Code | starts as the worker user and a login file exists | install it for the worker user, log in once yourself |
-| Secrets file | `config/secrets.env` exists and only you can read it | copy the example, fill it in yourself, `chmod 600` |
+| Alerts and chat | optional; if you saved Telegram or Gmail credentials in the dashboard (Settings), the file that holds them is private | add them in the dashboard under Settings; if the file is readable by others, `chmod 600 config/secrets.env` |
 | Dashboard port | port 8765 is free; if not, the next free port is chosen and reported | close the program that uses the ports |
 | Disk and memory | at least 5 GB free disk and 4 GB RAM | free space; fewer parallel agents |
 
