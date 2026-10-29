@@ -40,6 +40,9 @@ def test_one_command_starts_everything_and_sigterm_stops_it(tmp_path):
             time.sleep(0.3)
         assert get("http://127.0.0.1:18900/")[0] == 200
         assert "AICorp Control Panel" in get("http://127.0.0.1:18890/")[1]
+        end = time.time() + 15
+        while time.time() < end and len(psutil.Process(app.pid).children(recursive=True)) < 3:
+            time.sleep(0.1)
         family = psutil.Process(app.pid).children(recursive=True)
         assert len(family) >= 3
         # nothing listens on anything but the loopback address
@@ -54,8 +57,12 @@ def test_one_command_starts_everything_and_sigterm_stops_it(tmp_path):
         except subprocess.TimeoutExpired:
             app.kill()
             pytest.fail("the app did not shut down on SIGTERM")
-    time.sleep(0.5)
-    left = [p.pid for p in family if psutil.pid_exists(p.pid) and psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE]
+    end = time.time() + 15
+    while True:
+        left = [p.pid for p in family if psutil.pid_exists(p.pid) and psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE]
+        if not left or time.time() > end:
+            break
+        time.sleep(0.1)
     assert not left
     assert get("http://127.0.0.1:18900/")[0] is None and get("http://127.0.0.1:18890/")[0] is None
     assert not (home / "runtime" / "supervisor.json").exists()

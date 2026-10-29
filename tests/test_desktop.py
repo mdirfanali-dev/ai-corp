@@ -35,7 +35,7 @@ if args[:1] == ["-d"]:
         rest = rest[2:]
     assert rest[0] == "-e"
     cmd = rest[1:]
-    cmd = [os.environ["FAKE_WSL_PYTHON"] if c == "python3" else c for c in cmd]
+    cmd = [os.environ["FAKE_WSL_PYTHON"] if c in ("python3", ".venv/bin/python") else c for c in cmd]
     if cmd[0] == "bash":
         os.execvp("bash", cmd)
     os.execvp(cmd[0], cmd)
@@ -126,19 +126,34 @@ def alive_pids(pids):
     return [p for p in pids if psutil.pid_exists(p) and psutil.Process(p).status() != psutil.STATUS_ZOMBIE]
 
 
+def all_gone(pids, timeout=15):
+    end = time.time() + timeout
+    while time.time() < end and alive_pids(pids):
+        time.sleep(0.1)
+    return not alive_pids(pids)
+
+
+def family_of(proc, at_least=3, timeout=15):
+    end = time.time() + timeout
+    while True:
+        kids = [p.pid for p in psutil.Process(proc.pid).children(recursive=True)]
+        if len(kids) >= at_least or time.time() > end:
+            return kids
+        time.sleep(0.1)
+
+
 def test_app_starts_through_the_bridge_and_stops_when_the_input_closes(fake, tmp_path):
     app = wb.AppProcess(fake, settings_for(tmp_path, distro="Ubuntu-24.04"), port=18960)
     app.start()
     try:
         url = app.wait_for_url(60)
         assert url and url.endswith(":18960/") and wb.reachable(url, 30)
-        family = [p.pid for p in psutil.Process(app.proc.pid).children(recursive=True)]
+        family = family_of(app.proc)
         assert len(family) >= 3 and app.alive()
     finally:
         app.stop(30)                                    # closing standard input is the whole protocol
     assert not app.alive() and app.proc.returncode == 0
-    time.sleep(0.5)
-    assert not alive_pids(family)
+    assert all_gone(family)
     assert not wb.reachable(url, 1.5)
 
 
@@ -147,12 +162,11 @@ def test_if_the_window_program_dies_the_system_shuts_down(fake, tmp_path):
     app.start()
     url = app.wait_for_url(60)
     assert url and wb.reachable(url, 30)
-    family = [p.pid for p in psutil.Process(app.proc.pid).children(recursive=True)]
+    family = family_of(app.proc)
     app.proc.stdin.close()                              # what a crashed Windows program looks like from inside Linux
     app.proc.stdin = None
     assert app.proc.wait(40) == 0
-    time.sleep(0.5)
-    assert not alive_pids(family)
+    assert all_gone(family)
 
 
 # ------------------------------------------------------------------ the window logic

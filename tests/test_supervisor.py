@@ -231,8 +231,7 @@ def test_real_programs_start_answer_and_stop_cleanly(tmp_path):
         steps = sup.stop()
     assert {s["state"] for s in steps} <= {"stopping", "off"} and not [s for s in steps if s["detail"] and "forced" in s["detail"]], steps
     assert http_status(sup.dashboard_url()) is None
-    time.sleep(0.5)
-    assert not [p for p in pids if psutil.pid_exists(p) and psutil.Process(p).status() != psutil.STATUS_ZOMBIE]
+    assert wait_for(lambda: not [p for p in pids if psutil.pid_exists(p) and psutil.Process(p).status() != psutil.STATUS_ZOMBIE], 15)
 
 
 def test_clash_check_only_counts_programs_on_the_same_data_folder(home, tmp_path):

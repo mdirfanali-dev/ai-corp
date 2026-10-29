@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "httpx", "ruff"]
+dev = ["pytest", "pytest-timeout", "httpx", "ruff", "pyyaml"]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -31,6 +31,9 @@ aicorp = ["migrations/*.sql", "web/templates/*.html", "web/static/*"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+# a hung test (for example a stuck browser) must fail with its name instead of blocking the whole run
+timeout = 240
+timeout_method = "thread"
 filterwarnings = ["ignore:Using .httpx. with .starlette.testclient.:Warning"]
 
 [tool.ruff]

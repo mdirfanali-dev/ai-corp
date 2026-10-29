@@ -30,6 +30,7 @@ The list is generated from the installed package metadata by `scripts/third_part
 | pyee | 14.0.0 | MIT License |
 | Pygments | 2.21.0 | BSD-2-Clause |
 | pytest | 9.1.1 | MIT |
+| pytest-timeout | 2.4.0 | DFSG approved; MIT License |
 | python-dotenv | 1.2.4 | BSD-3-Clause |
 | python-multipart | 0.0.32 | Apache-2.0 |
 | PyYAML | 6.0.3 | MIT License |
