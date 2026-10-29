@@ -5,6 +5,8 @@ Windows 11 with WSL2 is the tested setup; Linux and macOS use `python -m aicorp.
 
 ## Install
 
+**Easiest:** download `AICorp-Setup-<version>.exe` from the Releases page and run it (installs for your user only, no administrator rights; Start Menu entry, optional desktop shortcut, uninstall in Windows Settings -> Apps; uninstalling never touches your AICorp data, which lives inside Linux). The steps below build the app yourself.
+
 1. Install [Python for Windows](https://www.python.org/downloads/) (tick *Add python.exe to PATH*). It is only used to build the app.
 2. In PowerShell, from the `desktop` folder of this repository:
    `powershell -ExecutionPolicy Bypass -File build.ps1 -Shortcut`
@@ -28,4 +30,5 @@ Command line: `AICorp.exe --project ~/ai-corp --distro Ubuntu --data-dir ~/aicor
 * Closing the window with the X button opens the same Exit dialog as the Exit button; everything is shut down in order.
   If the app is killed, the system inside Linux shuts itself down.
 * If Windows cannot reach Linux on `localhost`, check `localhostForwarding` in `%UserProfile%\.wslconfig`, run `wsl --shutdown`, retry.
-* Build tools (pywebview, PyInstaller and their dependencies) are used only to build the `.exe`; see `docs/THIRD_PARTY.md`.
+* Build tools (pywebview, PyInstaller, Inno Setup for the installer, and their dependencies) are used only to build the `.exe` / installer; see `docs/THIRD_PARTY.md`.
+* To build the installer yourself: install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then `powershell -ExecutionPolicy Bypass -File installer/build-installer.ps1 -Version 0.1.0`.

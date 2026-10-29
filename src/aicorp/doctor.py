@@ -282,7 +282,7 @@ def check_secrets(p: Probe) -> Result:
     title = "Alerts and chat (Telegram / Gmail)"
     if not p.exists(path):
         return Result("secrets", title, OK, "not set up yet (optional)",
-                      "You can add Telegram or Gmail later in the dashboard under Settings.")
+                      "You can add Telegram or Gmail later in the dashboard under Settings (step-by-step: docs/SETUP-NOTIFICATIONS.md).")
     mode = p.mode(path)
     if mode is not None and not p.platform.startswith("win") and mode & 0o077:
         return Result("secrets", title, FAIL, f"the saved credentials can be read by other users (mode {mode:o})",

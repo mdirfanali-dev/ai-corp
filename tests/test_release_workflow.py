@@ -39,3 +39,18 @@ def test_builds_on_windows_with_pinned_actions():
     assert WF["jobs"]["build"]["runs-on"] == "windows-latest"
     uses = [s["uses"] for j in WF["jobs"].values() for s in j["steps"] if "uses" in s]
     assert uses and all("@v" in u for u in uses)
+
+
+def test_the_workflow_builds_and_attaches_the_installer_and_checksums_for_both_files():
+    assert "build-installer.ps1" in TEXT and "innosetup" in TEXT
+    assert "dist/AICorp-Setup-*.exe" in TEXT and "dist/AICorp.exe" in TEXT and "Get-ChildItem dist -Filter *.exe" in TEXT
+
+
+def test_the_installer_script_installs_per_user_and_never_touches_user_data():
+    iss = (ROOT / "desktop" / "installer" / "aicorp.iss").read_text(encoding="utf-8")
+    assert "PrivilegesRequired=lowest" in iss                              # no administrator rights
+    assert "UninstallDisplayIcon" in iss and "{group}" in iss              # appears in Windows Apps and the Start Menu
+    assert "MB_DEFBUTTON2" in iss and "never touched" in iss               # settings are removed only on an explicit Yes, data never
+    assert "DelTree(SettingsDir" in iss and iss.count("DelTree(") == 1      # the only deletion is the small settings folder
+    assert "runasadmin" not in iss.lower() and "PrivilegesRequired=admin" not in iss and "wsl --install" not in iss      # it never asks for admin rights or installs WSL
+    assert "{userappdata}\\AICorp" in iss

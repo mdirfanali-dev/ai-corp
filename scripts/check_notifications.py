@@ -1,10 +1,10 @@
 """Setup check: Telegram + Gmail SMTP/IMAP with secrets from config/secrets.env.
 Never prints secret values. Writes TELEGRAM_CHAT_ID back to secrets.env when discovered."""
-import imaplib, json, re, smtplib, ssl, sys, urllib.request
+import imaplib, json, os, re, smtplib, ssl, sys, urllib.request
 from email.message import EmailMessage
 from pathlib import Path
 
-ENV = Path(__file__).resolve().parent.parent / "config" / "secrets.env"
+ENV = Path(os.environ.get("AICORP_HOME") or Path(__file__).resolve().parent.parent) / "config" / "secrets.env"      # the same data folder the dashboard uses
 
 def load():
     d = {}

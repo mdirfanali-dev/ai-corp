@@ -25,6 +25,8 @@ if (Test-Path $work) { Remove-Item -Recurse -Force $work }
 New-Item -ItemType Directory -Force (Join-Path $work "pkg\aicorp") | Out-Null
 Copy-Item (Join-Path $desktop "*.py") $work
 Copy-Item (Join-Path $desktop "requirements.txt") $work
+New-Item -ItemType Directory -Force (Join-Path $work "assets") | Out-Null
+Copy-Item (Join-Path $desktop "assets\aicorp.ico") (Join-Path $work "assets")
 Copy-Item (Join-Path $project "src\aicorp\__init__.py") (Join-Path $work "pkg\aicorp")
 Copy-Item (Join-Path $project "src\aicorp\doctor.py") (Join-Path $work "pkg\aicorp")
 
@@ -35,7 +37,7 @@ try {
     & .\venv\Scripts\python -m pip install --quiet --disable-pip-version-check -r requirements.txt
     if ($LASTEXITCODE -ne 0) { throw "Installing the build tools failed." }
     Write-Host "Building AICorp.exe..."
-    & .\venv\Scripts\pyinstaller --noconfirm --onefile --windowed --name AICorp --paths $work --paths (Join-Path $work "pkg") shell.py
+    & .\venv\Scripts\pyinstaller --noconfirm --onefile --windowed --name AICorp --icon (Join-Path $work "assets\aicorp.ico") --paths $work --paths (Join-Path $work "pkg") shell.py
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path "dist\AICorp.exe")) { throw "The build failed." }
     New-Item -ItemType Directory -Force $Out | Out-Null
     Copy-Item "dist\AICorp.exe" (Join-Path $Out "AICorp.exe") -Force

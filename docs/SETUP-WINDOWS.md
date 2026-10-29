@@ -10,7 +10,11 @@ shows the control panel and the dashboard, so you never open a terminal by hand.
 * Windows 11: open PowerShell **as administrator**, run `wsl --install -d Ubuntu`, restart, and finish the Ubuntu first-start questions.
 * In Ubuntu: `git clone https://github.com/mdirfanali-dev/ai-corp.git ~/ai-corp` (Python 3.12 or newer is needed; see [DOCTOR.md](DOCTOR.md)).
 
-## 2. Build and install the app
+## 2. Install the app
+
+**Installer (recommended):** run `AICorp-Setup-<version>.exe` from the Releases page. It installs for your user only (no administrator rights), adds AICorp to the Start Menu (and the desktop if you tick it) and to Windows Settings -> Apps, where you can uninstall it. **Uninstalling removes only the app.** Your AICorp data lives inside Linux and is never touched; the installer only asks whether to remove its small settings file (default: keep).
+
+**Or build it yourself:**
 
 Follow [`desktop/README.md`](../desktop/README.md): install Python for Windows, then run `build.ps1 -Shortcut` in PowerShell.
 It builds one `AICorp.exe` (about 13 MB), copies it to `%LOCALAPPDATA%\AICorp` and puts a shortcut on the desktop.

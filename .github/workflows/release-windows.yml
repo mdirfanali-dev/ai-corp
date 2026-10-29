@@ -18,9 +18,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Build AICorp.exe
+      - name: Build AICorp.exe and the installer
         shell: pwsh
-        run: ./desktop/build.ps1 -Out "$PWD/dist"
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if (-not (Get-Command ISCC.exe -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          }
+          $version = $env:TAG.TrimStart("v")
+          ./desktop/installer/build-installer.ps1 -Version $version -Out "$PWD/dist"
       - name: Smoke check (the checker must start and report on WSL)
         shell: pwsh
         run: |
@@ -31,14 +38,14 @@ jobs:
       - name: Checksums
         shell: pwsh
         run: |
-          $h = (Get-FileHash -Algorithm SHA256 dist/AICorp.exe).Hash.ToLower()
-          "$h  AICorp.exe" | Out-File -Encoding ascii dist/SHA256SUMS
+          Get-ChildItem dist -Filter *.exe | ForEach-Object { "$((Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower())  $($_.Name)" } | Out-File -Encoding ascii dist/SHA256SUMS
           Get-Content dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
             dist/AICorp.exe
+            dist/AICorp-Setup-*.exe
             dist/SHA256SUMS
           if-no-files-found: error
 
@@ -63,4 +70,4 @@ jobs:
             *-beta*|*-alpha*|*-rc*) FLAGS="--prerelease"; NOTES=.github/release-notes-beta.md ;;
             *) FLAGS=""; NOTES=.github/release-notes.md ;;
           esac
-          gh release create "$TAG" dist/AICorp.exe dist/SHA256SUMS --title "AICorp $TAG" --notes-file "$NOTES" $FLAGS --verify-tag
+          gh release create "$TAG" dist/AICorp-Setup-*.exe dist/AICorp.exe dist/SHA256SUMS --title "AICorp $TAG" --notes-file "$NOTES" $FLAGS --verify-tag

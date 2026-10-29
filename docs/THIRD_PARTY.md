@@ -67,6 +67,7 @@ Build tools only (not shipped in the `.exe`):
 |---|---|---|
 | pyinstaller | 6.22.3 | GPL-2.0-or-later with a special exception that allows the built program to use any license |
 | pyinstaller-hooks-contrib | 2026.9 | Apache-2.0; GPL-2.0 |
+| Inno Setup (installer compiler, a separate Windows program) | 6.x | Inno Setup License (free, permissive); not part of the product |
 | altgraph | 0.17.5 | MIT |
 | pefile | 2024.8.26 | MIT |
 | packaging | 26.3 | Apache-2.0 OR BSD-2-Clause |

@@ -36,7 +36,7 @@ DESKTOP_BUNDLED = [("pywebview", "6.2.1", "BSD-3-Clause"), ("pythonnet", "3.2.1"
                    ("bottle", "0.13.4", "MIT"), ("proxy_tools", "0.1.0", "MIT"), ("cffi", "2.1.1", "MIT-0"), ("pycparser", "3.12", "BSD-3-Clause"),
                    ("typing_extensions", "4.16.0", "PSF-2.0")]
 DESKTOP_BUILD_ONLY = [("pyinstaller", "6.22.3", "GPL-2.0-or-later with a special exception that allows the built program to use any license"),
-                      ("pyinstaller-hooks-contrib", "2026.9", "Apache-2.0; GPL-2.0"), ("altgraph", "0.17.5", "MIT"), ("pefile", "2024.8.26", "MIT"),
+                      ("pyinstaller-hooks-contrib", "2026.9", "Apache-2.0; GPL-2.0"), ("Inno Setup (installer compiler, a separate Windows program)", "6.x", "Inno Setup License (free, permissive); not part of the product"), ("altgraph", "0.17.5", "MIT"), ("pefile", "2024.8.26", "MIT"),
                       ("packaging", "26.3", "Apache-2.0 OR BSD-2-Clause"), ("pywin32-ctypes", "0.2.3", "BSD-3-Clause"), ("setuptools", "84.2.1", "MIT")]
 
 
