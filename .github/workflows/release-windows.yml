@@ -27,6 +27,7 @@ jobs:
           $out = python desktop/shell.py --check 2>&1 | Out-String
           Write-Host $out
           if ($out -notmatch "WSL") { throw "the checker did not report on WSL" }
+          exit 0                                       # the checker exits 1 when WSL is missing, which is expected on a runner
       - name: Checksums
         shell: pwsh
         run: |
